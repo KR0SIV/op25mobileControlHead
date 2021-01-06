@@ -9,7 +9,7 @@ import io
 
 op25uri = 'http://192.168.122.25:8080'
 #./rx.py --args 'rtl' -N 'LNA:49' -S 2000000 -f 855.8625e6 -o 25000 -T trunk.tsv -V -2 -q -1 -l http:0.0.0.0:8080
-pyglet.font.add_file('digital.ttf')
+#pyglet.font.add_file('digital.ttf')
 
 ##Formats numbers with a decminal every 3 char
 def formatchan(frequency):
@@ -90,8 +90,8 @@ def update():
             print('failed')
 
 ##Main TKInter Config/Setup
-screen_width = 2280
-screen_height = 1080
+screen_width = 2280 // 2
+screen_height = 1080 // 2
 screen_geometry = '{}x{}'.format(screen_width, screen_height)
 
 main_window = Tk()
@@ -110,6 +110,11 @@ def colorFUNC(color):
     else:
         textcolor = 'black'
     displayframe.configure(background=color)
+    nonmenuframe.configure(background=color)
+    primedisplayframe.configure(background=color)
+    bottomframe.configure(background=color)
+    menuframe.configure(background=color)
+    systemstatusframe.configure(background=color)
     systemFRAME.configure(background=color)
     nacTEXT.configure(fg=textcolor, bg=color)
     wacnTEXT.configure(fg=textcolor, bg=color)
@@ -135,16 +140,23 @@ def colorFUNC(color):
     errorTEXT.configure(fg=textcolor, bg=color)
     holdTEXT.configure(fg=textcolor, bg=color)
     bothrxtxTEXT.configure(fg=textcolor, bg=color)
+    skipBTN.configure(fg=textcolor, bg=color, activebackground=color)
+    menuBTN.configure(fg=textcolor, bg=color, activebackground=color)
+    closemenuBTN.configure(fg=textcolor, bg=color, activebackground=color)
+    holdBTN.configure(fg=textcolor, bg=color, activebackground=color)
 
 ##Json post functions
+
+
 def holdFUNC():
-    if holdTEXT.cget('text') == 'HOLD':
-        holdTEXT.configure(text='')
-        #requests.post(op25uri, json=[{"command": "hold", "data": 0}])#2017 variant
+    if holdBTN.cget('relief') == RAISED:
+        holdBTN.configure(relief = SUNKEN, fg='red')
         requests.post(op25uri, json=[{"command": "hold", "arg1": 0, "arg2": 0}])
     else:
-        holdTEXT.configure(text='HOLD')
-    requests.post(op25uri, json=[{"command": "hold", "arg1": 0, "arg2": 0}])
+        if skipBTN.cget('bg') == 'black':##Check another button to see what the background color is
+            holdBTN.configure(relief=RAISED, fg='white')##If blackbackground then white text
+        holdBTN.configure(relief=RAISED, fg='black')##IF any other background then black text
+        requests.post(op25uri, json=[{"command": "hold", "arg1": 0, "arg2": 0}])
 
 
 def skipFUNC():
@@ -175,6 +187,13 @@ def gotoFUNC():
     goBTN = Button(gotoWIN, text='GO', command=lambda: [gotoPostFUNC(talkgroupENT.get()), gotoWIN.destroy()])
     goBTN.pack()
 
+def openMENU():
+    menuframe.grid(row=0, column=0, columnspan=5, rowspan=4, sticky='nsew')
+
+def closeMENU():
+    menuframe.grid_forget()
+
+
 ##Tuning Functions for The Key Frame
 
 def tune100negFUNC():
@@ -198,48 +217,9 @@ keyframe_color = 'lightgray'
 
 ##DISPLAY FRAME FOR PLOTTING OP25 DATA
 displayframe = Frame(main_window)
-displayframe.pack(side=TOP, pady=10, padx=10, ipady=0, expand=False, fill=BOTH)
+displayframe.pack(side=TOP, pady=10, padx=10, ipady=0, expand=True, fill=BOTH)
 displayframe.configure(background=display_color)
 
-##LABELS AND POSITIONS FOR DISPLAY FRAME
-nacTEXT = Label(displayframe, text="", bg=display_color, font=('Digital-7 Mono', 20))
-#nacTEXT.grid(row=0, column=0, sticky='nw')
-
-wacnTEXT = Label(displayframe, text="", bg=display_color, font=('Digital-7 Mono', 20))
-#wacnTEXT.grid(row=0, column=0, sticky='nw')
-
-nacwacnTEXT = Label(displayframe, text="", bg=display_color, font=('Digital-7 Mono', 20))
-nacwacnTEXT.grid(row=0, column=0, sticky='nw')
-
-rfidTEXT = Label(displayframe, text="", bg=display_color, anchor='e', font=('Digital-7 Mono', 22))
-rfidTEXT.grid(row=0, column=2, sticky='n')
-
-stidTEXT = Label(displayframe, text="", bg=display_color, font=('Digital-7 Mono', 22))
-stidTEXT.grid(row=0, column=4, sticky='new')
-
-tsbksTEXT = Label(displayframe, text="", bg=display_color, font=('Digital-7 Mono', 22))
-tsbksTEXT.grid(row=0, column=5, sticky='ne')
-
-tagTEXT = Label(displayframe, text="Scanning...", bg=display_color, font=('Digital-7 Mono', 40))
-tagTEXT.grid(row=1, column=0, columnspan=6, sticky='nw')
-
-grpaddrTEXT = Label(displayframe, text="", bg=display_color, font=('Digital-7 Mono', 22))
-grpaddrTEXT.grid(row=3, column=0, rowspan=1, sticky='nw')
-
-srcaddrTEXT = Label(displayframe, text="", bg=display_color, font=('Digital-7 Mono', 22))
-srcaddrTEXT.grid(row=4, column=0, rowspan=1, sticky='nw')
-
-offsetTEXT = Label(displayframe, text="", bg=display_color, font=('Digital-7 Mono', 20))
-offsetTEXT.grid(row=3, column=5, sticky='ne')
-
-errorTEXT = Label(displayframe, text="", bg=display_color, font=('Digital-7 Mono', 22))
-errorTEXT.grid(row=4, column=5, sticky='ne')
-
-holdTEXT = Label(displayframe, text="", bg=display_color, font=('Digital-7 Mono', 32))
-holdTEXT.grid(row=5, column=5, sticky='ne')
-
-secondaryTEXT = Label(displayframe, text="", bg=display_color, font=('Digital-7 Mono', 20))
-secondaryTEXT.grid(row=5, column=0, sticky='nw')
 
 ##Variables used but not referenced on grid
 sysidTEXT = Label(displayframe, text="", bg=display_color, font=('Digital-7 Mono', 20))
@@ -251,60 +231,61 @@ txchanTEXT = Label(displayframe, text="", bg=display_color, font=('Digital-7 Mon
 adjacent_dataTEXT = Label(displayframe, text="", bg=display_color, font=('Digital-7 Mono', 22))
 frequenciesTEXT = Label(displayframe, text="", bg=display_color, font=('Digital-7 Mono', 15))
 
+#System Status Frame;Keeping everything looking nice
+systemstatusframe = Frame(displayframe)
+systemstatusframe.grid(row=0, column=0, sticky='new', columnspan=4)
+systemstatusframe.configure(background=display_color)
 
-##KEY FRAME FOR PUTTING BUTTONS ON THE BOTTOM OF THE DISPLAY
-keyframe = Frame(main_window)
-keyframe.pack(side=TOP, pady=10, padx=10, ipady=0, fill=X)
-keyframe.configure(background=keyframe_color)
+systemstatusframe.columnconfigure(0, weight=1)
 
-##LABELS AND POSITIONS FOR KEY FRAME
+##MENU BUTTON;column4 while systemstatusframe of displayframe is a columnspan of 4 keeping it outside the primary frame
+menuBTN = Button(displayframe, text=" ≡ ", bg=display_color, activebackground=display_color, font=('Digital-7 Mono', 12), command=openMENU)
+menuBTN.grid(row=0, column=4, sticky='ne')
+##MENU BUTTON
 
-##Buttons Without Position
-skipBTN = Button(keyframe, text='SKIP', command=skipFUNC, width=10, height=5)
-skipBTN.grid(row=0, column=0, sticky='nsew')
+##Labels and positions for system status frame
+nacTEXT = Label(displayframe, text="", bg=display_color, font=('Digital-7 Mono', 20))
+#nacTEXT.grid(row=0, column=0, sticky='nw')
 
-holdBTN = Button(keyframe, text='HOLD', command=holdFUNC, width=10, height=5)
-holdBTN.grid(row=0, column=1, sticky='nsew')
+wacnTEXT = Label(displayframe, text="", bg=display_color, font=('Digital-7 Mono', 20))
+#wacnTEXT.grid(row=0, column=0, sticky='nw')
 
-color1BTN = Button(keyframe, text='BLUE', height=5, command=lambda: colorFUNC('lightblue'))
-color1BTN.grid(row=0, column=3, sticky='nsew')
+nacwacnTEXT = Label(systemstatusframe, text="", bg=display_color, font=('Digital-7 Mono', 20))
+nacwacnTEXT.grid(row=0, column=0, sticky='nw')
 
-color2BTN = Button(keyframe, text='ORNG', height=5, command=lambda: colorFUNC('orange'))
-color2BTN.grid(row=0, column=4, sticky='nsew')
+rfidTEXT = Label(systemstatusframe, text="", bg=display_color, anchor='e', font=('Digital-7 Mono', 22))
+rfidTEXT.grid(row=0, column=1, sticky='nw')
 
-color3BTN = Button(keyframe, text='GREN', height=5, command=lambda: colorFUNC('limegreen'))
-color3BTN.grid(row=0, column=5, sticky='nsew')
+stidTEXT = Label(systemstatusframe, text="", bg=display_color, font=('Digital-7 Mono', 22))
+stidTEXT.grid(row=0, column=2, sticky='nw')
 
-color4BTN = Button(keyframe, text='BLAK', height=5, command=lambda: colorFUNC('black'))
-color4BTN.grid(row=0, column=6, sticky='nsew')
+tsbksTEXT = Label(systemstatusframe, text="", bg=display_color, font=('Digital-7 Mono', 22))
+tsbksTEXT.grid(row=0, column=3, sticky='nw')
 
 
-gotoBTN = Button(keyframe, text='GOTO', command=gotoFUNC, width=10, height=5)
-gotoBTN.grid(row=0, column=2, sticky='nsew')
+##Prime Display hold the TAG and System Data including the SystemFrame
+primedisplayframe = Frame(displayframe)
+primedisplayframe.grid(row=1, column=0, sticky='nsew', columnspan=5)
+primedisplayframe.configure(background=display_color)
 
-lockoutBTN = Button(keyframe, text='L/O', width=10, height=5)
+##Modify Prime Display Font Based on window width
+def d(event):
+    varifont = int(int(event.width) / 28)
+    tagTEXT.configure(font=('Digital-7 Mono', varifont))
+    systemTEXT.configure(font=('Digital-7 Mono', varifont))
 
-tune100negBTN = Button(keyframe, text='<', command=tune100negFUNC, height=5)
-tune100negBTN.grid(row=1, column=0, sticky='nsew')
+primedisplayframe.bind( "<Configure>", d )
+##Modify Prime Display Font Based on window width
 
-tune1200negBTN = Button(keyframe, text='<<', command=tune1200negFUNC, height=5)
-tune1200negBTN.grid(row=1, column=1, sticky='nsew')
+#Labels and positions for prime display
+tagTEXT = Label(primedisplayframe, text="Scanning...", bg=display_color, font=('Digital-7 Mono', 40))
+tagTEXT.grid(row=0, column=0, columnspan=5, sticky='nw')
 
-tune100posBTN = Button(keyframe, text='>', command=tune100posFUNC, height=5)
-tune100posBTN.grid(row=1, column=3, columnspan=4, sticky='nsew')
 
-tune1200posBTN = Button(keyframe, text='>>', command=tune1200posFUNC, height=5)
-tune1200posBTN.grid(row=1, column=2, sticky='nsew')
-
-keyframe.columnconfigure(0, weight=1)
-keyframe.columnconfigure(1, weight=1)
-keyframe.columnconfigure(2, weight=1)
-keyframe.columnconfigure(3, weight=0)
-
-##SYSTEM FRAME FOR KEEPING SYSTEM DETAILS TOGETHER
-systemFRAME = Frame(displayframe)
+##SYSTEM FRAME FOR KEEPING SYSTEM DETAILS TOGETHER;exists within primedisplayframe
+systemFRAME = Frame(primedisplayframe)
 systemFRAME.configure(background=display_color)
-systemFRAME.grid(row=2, column=0, sticky='nw')
+systemFRAME.grid(row=1, column=0, sticky='nw')
 
 #LABELS AND POSITIONS FOR SYSTEM FRAME
 systemTEXT = Label(systemFRAME, text="", bg=display_color, font=('Digital-7 Mono', 40))
@@ -313,11 +294,63 @@ systemTEXT.grid(row=0, column=0, columnspan=1, sticky='nw')
 bothrxtxTEXT = Label(systemFRAME, text="", bg=display_color, font=('Digital-7 Mono', 15))
 bothrxtxTEXT.grid(row=0, column=1, rowspan=2, ipady=10, sticky='nw')
 
+##Bottom frame for display
+bottomframe = Frame(displayframe)
+bottomframe.grid(column=0, row=3, sticky='nsew', columnspan=5)
+bottomframe.configure(background=display_color)
+
+bottomframe.columnconfigure(0, weight=1)
+
+grpaddrTEXT = Label(bottomframe, text="", bg=display_color, font=('Digital-7 Mono', 22))
+grpaddrTEXT.grid(row=3, column=0, rowspan=1, sticky='nw')
+
+srcaddrTEXT = Label(bottomframe, text="", bg=display_color, font=('Digital-7 Mono', 22))
+srcaddrTEXT.grid(row=4, column=0, rowspan=1, sticky='nw')
+
+offsetTEXT = Label(bottomframe, text="", bg=display_color, font=('Digital-7 Mono', 20))
+offsetTEXT.grid(row=3, column=5, sticky='ne')
+
+errorTEXT = Label(bottomframe, text="", bg=display_color, font=('Digital-7 Mono', 22))
+errorTEXT.grid(row=4, column=5, sticky='ne')
+
+holdTEXT = Label(bottomframe, text="", bg=display_color, font=('Digital-7 Mono', 32))
+#holdTEXT.grid(row=5, column=5, sticky='ne')
+
+
+secondaryTEXT = Label(bottomframe, text="", bg=display_color, font=('Digital-7 Mono', 20))
+secondaryTEXT.grid(row=5, column=0, sticky='nw')
+
+
+##NON MENU BUTTONS FRAME
+nonmenuframe = Frame(bottomframe)
+nonmenuframe.grid(row=5, column=5, sticky='ne')
+
+##NON MENU BUTTONS
+skipBTN = Button(nonmenuframe, text="SKIP", bg=display_color, activebackground=display_color, fg='grey', font=('Digital-7 Mono', 22), command=skipFUNC)
+skipBTN.grid(row=0, column=0, sticky='ne')
+
+holdBTN = Button(nonmenuframe, text="HOLD", bg=display_color, activebackground=display_color, fg='grey', font=('Digital-7 Mono', 22), command=holdFUNC)
+holdBTN.grid(row=0, column=1, sticky='ne')
+##NON MENU BUTTONS
+
+
 displayframe.columnconfigure(0, weight=0)
 displayframe.columnconfigure(1, weight=0)
 displayframe.columnconfigure(2, weight=1)
 displayframe.columnconfigure(3, weight=0)
 
+displayframe.rowconfigure(0, weight=1)
+displayframe.rowconfigure(1, weight=0)
+displayframe.rowconfigure(2, weight=1)
+
+##MENU FRAME APPEARS OVER TOP OF ALL OTHER FRAMES
+menuframe = Frame(displayframe)
+menuframe.configure(background=display_color)
+menuframe.columnconfigure(0, weight=1)
+closemenuBTN = Button(menuframe, text=" ≡ ", bg=display_color, activebackground=display_color, font=('Digital-7 Mono', 12), command=closeMENU)
+closemenuBTN.grid(row=0, column=4, sticky='ne')
+
+colorFUNC('black')
 
 t = threading.Thread(target=update)
 t.start()
