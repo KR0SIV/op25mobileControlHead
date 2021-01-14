@@ -36,7 +36,7 @@ def jsoncmd(command, arg1, arg2):
         time.sleep(1)
         jsoncmd(command=command, arg1=arg1, arg2=arg2)
     else:
-        print('found uri')
+        #print('found uri')
         return requests.post(op25uri, json=[{"command":command,"arg1":int(arg1),"arg2":int(arg2)}])
 
 #./rx.py --args 'rtl' -N 'LNA:49' -S 2000000 -f 855.8625e6 -o 25000 -T trunk.tsv -V -2 -q -1 -l http:0.0.0.0:8080
@@ -86,12 +86,12 @@ def update():
                 #print(e)
                 pass
             try:
-                enc = data[1]['encrypted']
-                if enc == 0:
+                enc = str(data[1]['encrypted'])
+                if enc == str(0):
                     encTEXT.configure(fg='grey')
                 else:
                     encTEXT.configure(fg='black')
-                    if encTEXT.cget(background='black'):
+                    if encTEXT.cget(bg='black'):
                         encTEXT.configure(fg='white')
                 srcaddr = str(data[1]['srcaddr'])
                 #srcaddrTEXT.configure(text='SRC: ' + srcaddr)
@@ -143,7 +143,7 @@ def update():
                 tsbks = str(data[1][rawnac]['tsbks'])
                 #tsbksTEXT.configure(text='tsbks:' + tsbks)
             except Exception as e:
-                print(e)
+               #print(e)
                 pass
             try:
                 error = str(data[2]['error'])
@@ -151,10 +151,8 @@ def update():
             except:
                 pass
 
-        except Exception as e:
-            print(e)
-            #print('failed to connect')
-            pass
+        except requests.exceptions.ConnectionError:
+                tagTEXT.configure(text='Connecting...')
 
 
 def nightMode():
@@ -663,14 +661,14 @@ menuBTN.grid(row=0, column=5, sticky='E')
 
 rightalertFrame.columnconfigure(0, weight=1)
 
-compassRangeTEXT = Label(leftcompassFrame, text='15 Miles', bg='lightgray')
+compassRangeTEXT = Label(leftcompassFrame, text='15 Miles', bg=display_color)
 compassRangeTEXT.grid(row=0, column=1, sticky='NESW')
 
 ##Right Site Compass Frame
 img = Image.open('static/images/compass.png')#.rotate(compassRotate(bearing))
 
 tkimage = ImageTk.PhotoImage(img)
-compassIMG = Label(leftcompassFrame, image=tkimage, bg='lightgray')
+compassIMG = Label(leftcompassFrame, image=tkimage, bg=display_color)
 compassIMG.grid(row=1, column=1, sticky='NESW')
 
 
@@ -690,7 +688,7 @@ tuneBTN = Button(leftcompassFrame, text='TUNE', width=10, bg='lightgray')
 
 #Tab Name Labels
 #tab1Label = Label(callTAB1, text="This is Tab 1", bg=display_color)
-call_logTEXT = Text(callTAB1, bg='lightgray', relief=SOLID)
+call_logTEXT = Text(callTAB1, bg='gray', relief=SOLID)
 call_logTEXT.grid(column=0, row=0, padx=2, pady=2, sticky='NESW')
 
 callTAB1.rowconfigure(0, weight=1)
