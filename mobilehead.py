@@ -39,6 +39,7 @@ def jsoncmd(command, arg1, arg2):
         #print('found uri')
         return requests.post(op25uri, json=[{"command":command,"arg1":int(arg1),"arg2":int(arg2)}])
 
+
 #./rx.py --args 'rtl' -N 'LNA:49' -S 2000000 -f 855.8625e6 -o 25000 -T trunk.tsv -V -2 -q -1 -l http:0.0.0.0:8080
 #pyglet.font.add_file('digital.ttf')
 
@@ -155,7 +156,15 @@ def update():
                 tagTEXT.configure(text='Connecting...')
 
 
+######################START CLIENT FOR REMOTE COMMAND FUNCTIONS################################
+
+import socket
+import sys
+
+
+
 def nightMode():
+    print('Night Mode Thread Running')
     time.sleep(15)
     nightmodePrompt.grid(row=1, column=0)
     colorFUNC('black')
@@ -272,7 +281,12 @@ activeFrame.rowconfigure(0, weight=1)
 ##Bottom Frame;A Button bar...
 bottomFrame = Frame(rootFrame, bd=1, relief=SOLID)
 bottomFrame.grid(column=0, row=4, columns=10, sticky='SEW')
-Label(bottomFrame, text='Bottom Button Bar?').grid()
+
+bottomStatusTEXT = Label(bottomFrame, text='Loading Status Updates....', bg=display_color, anchor='w')
+bottomStatusTEXT.grid(sticky='NSEW')
+
+bottomFrame.columnconfigure(0, weight=1)
+
 ##END Bottom FRame
 
 
@@ -853,8 +867,84 @@ else:
     time.sleep(1)
     t = threading.Thread(target=update)
     t.start()
-    # t2 = threading.Thread(target=nightMode)
-    # t2.start()
+   # t2 = threading.Thread(target=nightMode)
+    #t2.start()
+
+
+
+def sendCMD(function, **kwargs):
+    try:
+        # print(kwargs.keys())
+        # print(kwargs.get('siteID'))
+        if 'siteID' in kwargs:
+            argSiteid = kwargs['siteID']
+        else:
+            argSiteid = ''
+        if 'sysID' in kwargs:
+            argSysid = kwargs['sysID']
+        else:
+            argSysid = ''
+        if 'rrUser' in kwargs:
+            argrrUser = kwargs['rrUser']
+        else:
+            argrrUser = ''
+        if 'rrPass' in kwargs:
+            argrrPass = kwargs['rrPass']
+        else:
+            argrrPass = ''
+
+        # Create a TCP/IP socket
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        # Connect the socket to the port where the server is listening
+        server_address = ('192.168.122.25', 10000)
+        print('connecting to {} port {}'.format(*server_address))
+        sock.connect(server_address)
+
+        # Send data
+        # message = b'This is the message.  It will be repeated.'
+        message = function + ', ' + str(kwargs)
+        bytemsg = bytes(message, 'utf-8')
+        print('sending {!r}'.format(bytemsg))
+        sock.sendall(bytemsg)
+
+        # Look for the response
+        amount_received = 0
+        amount_expected = len(bytemsg)
+
+        while amount_received < amount_expected:
+            data = sock.recv(1028)
+            amount_received += len(data)
+            # print('received {!r}'.format(data))
+            if data == bytemsg:
+                print('Data Match Verified')
+                bottomStatusTEXT.configure(text='Server Responded with Ack!', bg='green')
+            else:
+                sock.sendall(bytemsg)
+                bottomStatusTEXT.configure(text='Failed to send command, trying again', bg='red')
+    except Exception as e:
+        #print(e)
+        print('Server not started: is your remote script runnning?')
+        bottomStatusTEXT.configure(text='Couldn\'t Contact OP25 Instance: Do you have your remote script running?', bg='red')
+
+    finally:
+        print('closing socket')
+        sock.close()
+
+
+print('MODULE LOADED: op25mch_client.py')
+bottomStatusTEXT.configure(text='MODULE LOADED: op25mch_client.py', bg='green')
+
+
+#####TRAILING SLASH IS VERY IMPORTANT
+
+# sendCMD(function='radioreference', sysID='6643', rrUser='kr0siv', rrPass='', op25dir='/home/op25/op25/op25/gr-op25_repeater/apps/')
+# sendCMD(function='stopop25')
+try:
+    jsoncmd('skip', 0, 0)
+except:
+    print('Not Connecting to OP25, Attempting to Start with Remote Script')
+    sendCMD(function='startop25', sdr='rtl', lna='49', samplerate='2000000', trunkfile='trunk.tsv', offset='0', op25dir='/home/op25/op25/op25/gr-op25_repeater/apps/')
 
 
 
