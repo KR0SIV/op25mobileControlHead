@@ -1,3 +1,10 @@
-Binds to '0.0.0.0' port '10000'
+# OP25 Remote Server for the Mobile Control Head
 
-Run this on your OP25 instance to take in command from the mobile control head.
+## Server
+
+This server should be run on the same system running OP25 where it will take in commands from the OP25 Mobile Control Head.
+Binds to: '0.0.0.0' Binds Port: '10000'
+
+## Client
+
+The client is contained within the mobile control head itself. 
