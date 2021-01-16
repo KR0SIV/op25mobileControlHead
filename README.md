@@ -5,8 +5,10 @@ We take advantage of some data end-points left exposed for the web interface of 
 
 ## Goal of This Project
 
-Our goal is to build a commercial radio or mobile scanner-like control head for remote mounting an SDR based P25 Phase 1 and Phase 2 capable scanner.
+My goal is to build a commercial radio or mobile scanner-like control head for remote mounting an SDR based P25 Phase 1 and Phase 2 capable scanner.
 _without_ making modifications to the OP25 software itself.
+
+### This Project was born out of Pi25 Which consists of a portable handheld and mobile version. The mobile version is this repository and is the only one currently being actively developed at the moment.
 
 ## Screenshots
 
