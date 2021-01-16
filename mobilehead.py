@@ -29,15 +29,29 @@ def jsoncmd(command, arg1, arg2):
     op25uri = config.get('Pi25MCH', 'uri')
     if op25uri == '':
         print('no uri found')
-        time.sleep(1)
+        #time.sleep(1)
         jsoncmd(command=command, arg1=arg1, arg2=arg2)
     if op25uri == 'http://ip_address_to_OP25:port':
         print('default uri found')
-        time.sleep(1)
+        #time.sleep(1)
         jsoncmd(command=command, arg1=arg1, arg2=arg2)
     else:
-        #print('found uri')
-        return requests.post(op25uri, json=[{"command":command,"arg1":int(arg1),"arg2":int(arg2)}])
+        try:
+            #print('found uri')
+            return requests.post(op25uri, json=[{"command":command,"arg1":int(arg1),"arg2":int(arg2)}])
+        except:
+            bottomStatusTEXT.configure(text='I\'m sorry, seems you\'re not running OP25 or the Remote Command Script. Fix that and Restart', bg='red')
+
+
+def confwriter(argsection, argoption, argvalue):
+    if argsection in config.sections():
+        config.set(section=argsection, option=argoption, value=argvalue)
+        write_file()
+    else:
+        config.add_section(argsection)
+        config.set(section=argsection, option=argoption, value=argvalue)
+        write_file()
+
 
 
 #./rx.py --args 'rtl' -N 'LNA:49' -S 2000000 -f 855.8625e6 -o 25000 -T trunk.tsv -V -2 -q -1 -l http:0.0.0.0:8080
@@ -152,8 +166,33 @@ def update():
             except:
                 pass
 
-        except requests.exceptions.ConnectionError:
+        except:
                 tagTEXT.configure(text='Connecting...')
+                bottomStatusTEXT.configure(text='Failed to Connect to OP25 Instance, trying again in 10 Seconds..', bg='red')
+                count = 0
+                call_logTEXT.insert("1.0", 'Reconnecting to OP25 Instance' + '\t' + str(datetime.now().strftime('%I:%M:%S')) + '\n')
+                call_logTEXT.tag_add('highlightline', '1.0', '2.0')
+                call_logTEXT.tag_add('unhighlightline', '2.0', END)
+                call_logTEXT.tag_configure('highlightline', background='lightgreen')
+                call_logTEXT.tag_configure('unhighlightline', background='gray')
+                bottomStatusTEXT.configure(text='Sending Remote Command to Start OP25 With Your Selected Defaults')
+                sendCMD(function='startop25', sdr='rtl', lna='49', samplerate='2000000', trunkfile='trunk.tsv',
+                        offset='0', op25dir='/home/op25/op25/op25/gr-op25_repeater/apps/')
+                time.sleep(10)
+                bottomStatusTEXT.configure(text='Attempting to reconnect', bg='red')
+                if jsoncmd('update', 0, 0) == None:
+                    pass
+                else:
+                    bottomStatusTEXT.configure(text='Connected!', bg='green')
+                    bottomStatusTEXT.configure(text='OP25 Instance Connected!', bg='green')
+                    call_logTEXT.insert("1.0", 'OP25 Instance Connected' + '\t' + str(
+                        datetime.now().strftime('%I:%M:%S')) + '\n')
+                    call_logTEXT.tag_add('highlightline', '1.0', '2.0')
+                    call_logTEXT.tag_add('unhighlightline', '2.0', END)
+                    call_logTEXT.tag_configure('highlightline', background='lightgreen')
+                    call_logTEXT.tag_configure('unhighlightline', background='gray')
+                update()
+
 
 
 ######################START CLIENT FOR REMOTE COMMAND FUNCTIONS################################
@@ -247,6 +286,8 @@ main_window.rowconfigure(0, weight=1) #rootFrame spans to main_window height
 
 ##MENU Frame;Opens Overtop The other Frames
 menu_frame = Frame(main_window)
+
+
 ##END MENU Frame
 
 ##Top Frame;A button bar;menu bar;status text;something
@@ -392,7 +433,8 @@ def nouriFUNC():
     else:
         time.sleep(1)
         t = threading.Thread(target=update)
-        t.start()
+        if not t.is_alive():
+            t.start()
         # t2 = threading.Thread(target=nightMode)
         # t2.start()
 
@@ -675,6 +717,13 @@ menuBTN.grid(row=0, column=5, sticky='E')
 
 rightalertFrame.columnconfigure(0, weight=1)
 
+
+
+#Label(leftcompassFrame, text='placeholder').grid(row=0, column=0, sticky='nsew')
+
+
+
+
 compassRangeTEXT = Label(leftcompassFrame, text='15 Miles', bg=display_color)
 compassRangeTEXT.grid(row=0, column=1, sticky='NESW')
 
@@ -744,10 +793,62 @@ themegTAB3.columnconfigure(2, weight=1)
 
 ##MENU FRAME
 closemenuBTN = Button(menu_frame, text=" ≡ ", bg=display_color, activebackground=display_color, font=('Digital-7 Mono', 12), command=closemenuFUNC)
-Label(menu_frame, text="placeholder").grid(row=0, column=0, columnspan=4, sticky='NESW')
 closemenuBTN.grid(row=0, column=5, sticky='E')
-
 menu_frame.columnconfigure(0, weight=1)
+
+rrloginTEXT = Label(menu_frame, text='Radio Reference')
+rrloginTEXT.grid(column=0, row=0, padx=15, pady=0, sticky='NW')
+
+
+rrloginFrame = Frame(menu_frame, bd=3, relief=GROOVE)
+rrloginFrame.grid(column=0, row=1, padx=50, sticky='NW')
+
+
+usernameTEXT = Label(rrloginFrame, text='Username: ')
+usernameTEXT.grid(column=1, row=1, pady=5, padx=5)
+
+usernameENT = Entry(rrloginFrame, text='')
+usernameENT.grid(column=2, row=1, columnspan=5, sticky='EW', pady=5, padx=5)
+
+passwordTEXT = Label(rrloginFrame, text='Password: ')
+passwordTEXT.grid(column=1, row=2)
+
+passwordENT = Entry(rrloginFrame, text='', show='*')
+passwordENT.grid(column=2, row=2, columnspan=4, sticky='EW', pady=5, padx=5)
+
+if 'RadioReference' in config.sections():
+    usernameENT.insert(0, config.get('RadioReference', 'rruser'))
+    passwordENT.insert(0, config.get('RadioReference', 'rrpass'))
+
+def submitrr():
+    if rr_ischecked.get() == str(0):
+        print('start rr command i guess')
+        pass
+    else:
+        confwriter('RadioReference', 'rruser', usernameENT.get())
+        confwriter('RadioReference', 'rrpass', passwordENT.get())
+
+
+rr_ischecked = StringVar()
+rememberCHK = Checkbutton(rrloginFrame, text='Remember Me?', variable=rr_ischecked)
+rememberCHK.grid(column=3, row=3)
+rememberCHK.deselect()
+rrloginFrame.rowconfigure(4, weight=1)
+
+def clearrrFUNC():
+    usernameENT.delete(0, END)
+    passwordENT.delete(0, END)
+
+
+clearrrBTN = Button(rrloginFrame, text='Clear', command=clearrrFUNC)
+clearrrBTN.grid(column=4, row=3)
+
+
+enterrrBTN = Button(rrloginFrame, text='Enter', command=submitrr)
+enterrrBTN.grid(column=5, row=3, pady=5, padx=5)
+
+
+
 ##END MENU FRAME
 
 
@@ -866,7 +967,8 @@ if config.get('Pi25MCH', 'uri') == 'http://ip_address_to_OP25:port':
 else:
     time.sleep(1)
     t = threading.Thread(target=update)
-    t.start()
+    if not t.is_alive():
+        t.start()
    # t2 = threading.Thread(target=nightMode)
     #t2.start()
 
@@ -918,14 +1020,14 @@ def sendCMD(function, **kwargs):
             # print('received {!r}'.format(data))
             if data == bytemsg:
                 print('Data Match Verified')
-                bottomStatusTEXT.configure(text='Server Responded with Ack!', bg='green')
+                bottomStatusTEXT.configure(text='ACK: ' + str(data.decode('utf-8')), bg='green')
             else:
                 sock.sendall(bytemsg)
                 bottomStatusTEXT.configure(text='Failed to send command, trying again', bg='red')
     except Exception as e:
         #print(e)
         print('Server not started: is your remote script runnning?')
-        bottomStatusTEXT.configure(text='Couldn\'t Contact OP25 Instance: Do you have your remote script running?', bg='red')
+        bottomStatusTEXT.configure(text='ERROR: Couldn\'t Contact OP25 Instance', bg='red')
 
     finally:
         print('closing socket')
@@ -940,13 +1042,14 @@ bottomStatusTEXT.configure(text='MODULE LOADED: op25mch_client.py', bg='green')
 
 # sendCMD(function='radioreference', sysID='6643', rrUser='kr0siv', rrPass='', op25dir='/home/op25/op25/op25/gr-op25_repeater/apps/')
 # sendCMD(function='stopop25')
+'''
 try:
     jsoncmd('skip', 0, 0)
 except:
     print('Not Connecting to OP25, Attempting to Start with Remote Script')
     sendCMD(function='startop25', sdr='rtl', lna='49', samplerate='2000000', trunkfile='trunk.tsv', offset='0', op25dir='/home/op25/op25/op25/gr-op25_repeater/apps/')
 
-
+'''
 
 main_window.mainloop()
 
