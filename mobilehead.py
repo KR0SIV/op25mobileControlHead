@@ -1198,7 +1198,7 @@ for i in tsvrow:
 ###
 ###MENU DEVELOPMENT OPEN ON START
 ###
-openmenuFUNC()
+#openmenuFUNC()
 ###
 ###
 ###
