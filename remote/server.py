@@ -198,7 +198,7 @@ def startop25(sdr='rtl', lna='49', samplerate='2000000', trunkfile='trunk.tsv', 
     import os
 
     #op25dir = "op25/op25/gr25-op_repeater/apps"
-    screen = "screen -Sdm op25 ./rx.py --args '" + sdr + "' -N 'LNA:" + lna + "' -S " + samplerate + " -o 25000 -T " + trunkfile + " -V -2 -q " + offset + " -l http:0.0.0.0:8080"
+    screen = "screen -Sdm op25 ./rx.py --args '" + sdr + "' -N 'LNA:" + lna + "' -S " + samplerate + " -o 25000 -T " + trunkfile + " -V -2 -X -l http:0.0.0.0:8080"
     os.popen('cd ' + op25dir + ' && ' + screen)
 
 def stopop25():
@@ -243,7 +243,7 @@ while True:
                     #print('Found Function: ' + function + ' Generating TSV Files')
                     generateTSV(rrUser=dict['rrUser'], rrPass=dict['rrPass'], rrsysid=dict['sysID'], op25dir=dict['op25dir'])
                 if function == 'startop25':
-                    startop25(sdr=dict['sdr'], lna=dict['lna'], samplerate=dict['samplerate'], trunkfile=dict['trunkfile'], offset=dict['offset'], op25dir=dict['op25dir'])
+                    startop25(sdr=dict['sdr'], lna=dict['lna'], samplerate=dict['samplerate'], trunkfile=dict['trunkfile'], op25dir=dict['op25dir'])
                 if function == 'stopop25':
                     stopop25()
 
