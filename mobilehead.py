@@ -194,12 +194,6 @@ def update():
 
 
 
-######################START CLIENT FOR REMOTE COMMAND FUNCTIONS################################
-
-import socket
-import sys
-
-
 
 def nightMode():
     print('Night Mode Thread Running')
@@ -283,11 +277,8 @@ main_window.columnconfigure(0, weight=1) #rootFrame spans to main_window width
 main_window.rowconfigure(0, weight=1) #rootFrame spans to main_window height
 
 
-##MENU Frame;Opens Overtop The other Frames
-menu_frame = Frame(main_window)
 
 
-##END MENU Frame
 
 ##Top Frame;A button bar;menu bar;status text;something
 topFrame = Frame(rootFrame)
@@ -318,6 +309,10 @@ activeFrame.columnconfigure(1, weight=1, uniform='LeftRightFrameGrouping')
 activeFrame.rowconfigure(0, weight=1)
 ##END Primary Frame
 
+
+menu_frame = Frame(rootFrame)
+
+
 ##Bottom Frame;A Button bar...
 bottomFrame = Frame(rootFrame, bd=1, relief=SOLID)
 bottomFrame.grid(column=0, row=4, columns=10, sticky='SEW')
@@ -328,6 +323,77 @@ bottomStatusTEXT.grid(sticky='NSEW')
 bottomFrame.columnconfigure(0, weight=1)
 
 ##END Bottom FRame
+
+
+######################START CLIENT FOR REMOTE COMMAND FUNCTIONS################################
+
+import socket
+import sys
+
+
+def sendCMD(function, **kwargs):
+    try:
+        # print(kwargs.keys())
+        # print(kwargs.get('siteID'))
+        if 'siteID' in kwargs:
+            argSiteid = kwargs['siteID']
+        else:
+            argSiteid = ''
+        if 'sysID' in kwargs:
+            argSysid = kwargs['sysID']
+        else:
+            argSysid = ''
+        if 'rrUser' in kwargs:
+            argrrUser = kwargs['rrUser']
+        else:
+            argrrUser = ''
+        if 'rrPass' in kwargs:
+            argrrPass = kwargs['rrPass']
+        else:
+            argrrPass = ''
+
+        # Create a TCP/IP socket
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        # Connect the socket to the port where the server is listening
+        server_address = ('192.168.122.25', 10000)
+        print('connecting to {} port {}'.format(*server_address))
+        sock.connect(server_address)
+
+        # Send data
+        # message = b'This is the message.  It will be repeated.'
+        message = function + ', ' + str(kwargs)
+        bytemsg = bytes(message, 'utf-8')
+        print('sending {!r}'.format(bytemsg))
+        sock.sendall(bytemsg)
+
+        # Look for the response
+        amount_received = 0
+        amount_expected = len(bytemsg)
+
+        while amount_received < amount_expected:
+            data = sock.recv(1028)
+            amount_received += len(data)
+            # print('received {!r}'.format(data))
+            if data == bytemsg:
+                print('Data Match Verified')
+                bottomStatusTEXT.configure(text='ACK: ' + str(data.decode('utf-8')), bg='green')
+            else:
+                sock.sendall(bytemsg)
+                bottomStatusTEXT.configure(text='Failed to send command, trying again', bg='red')
+    except Exception as e:
+        #print(e)
+        print('Server not started: is your remote script runnning?')
+        bottomStatusTEXT.configure(text='ERROR: Couldn\'t Contact OP25 Instance', bg='red')
+
+    finally:
+        print('closing socket')
+        sock.close()
+
+#sendCMD('disableblacklistrange')
+
+###########################################
+#####END CLIENT CONNECTION
 
 
 ##Left Primary Column Sub-Frames
@@ -540,7 +606,7 @@ logTAB.add(callTAB1, text='Call Log', sticky='NESW')
 
 #Tab2
 syslogTAB2 = Frame(logTAB, bg='lightgray')
-logTAB.add(syslogTAB2, text='System Log', sticky='NESW')
+logTAB.add(syslogTAB2, text='Sys Log', sticky='NESW')
 
 #Tab3
 themegTAB3 = Frame(logTAB, bg='lightgray')
@@ -550,6 +616,11 @@ logTAB.grid(column=0, row=0, sticky='NESW')
 
 logTAB.columnconfigure(0, weight=1)
 logTAB.rowconfigure(0, weight=1)
+
+#Tab4
+
+scanGridTAB4 = Frame(logTAB, bg='lightgray')
+#logTAB.add(scanGridTAB4, text='ScanGrid', sticky='NESW')
 
 ##Tabbed Frames END
 
@@ -788,10 +859,346 @@ themegTAB3.columnconfigure(0, weight=1)
 themegTAB3.columnconfigure(1, weight=1)
 themegTAB3.columnconfigure(2, weight=1)
 ##END Tab 3
+
+##START Tab 4
+
+def gridtab1Func(buttontext, buttonrelief):
+    btnsplit = buttontext.split('\n')
+    tgid = btnsplit[0]
+    tgtag = btnsplit[1]
+    if buttonrelief == RAISED:
+        jsoncmd('whitelist', int(tgid), 0)
+        bottomStatusTEXT.configure(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
+        gridtabBTN1.configure(relief=SUNKEN, bg='gray')
+    if buttonrelief == SUNKEN:
+        jsoncmd('lockout', int(tgid), 0)
+        bottomStatusTEXT.configure(text='Locking out Talkgroup: ' + str(tgid), bg='green')
+        gridtabBTN1.configure(relief=RAISED, bg='SystemButtonFace')
+
+def gridtab2Func(buttontext, buttonrelief):
+    btnsplit = buttontext.split('\n')
+    tgid = btnsplit[0]
+    tgtag = btnsplit[1]
+    if buttonrelief == RAISED:
+        jsoncmd('whitelist', int(tgid), 0)
+        bottomStatusTEXT.configure(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
+        gridtabBTN2.configure(relief=SUNKEN, bg='gray')
+    if buttonrelief == SUNKEN:
+        jsoncmd('lockout', int(tgid), 0)
+        bottomStatusTEXT.configure(text='Locking out Talkgroup: ' + str(tgid), bg='green')
+        gridtabBTN2.configure(relief=RAISED, bg='SystemButtonFace')
+
+def gridtab3Func(buttontext, buttonrelief):
+    btnsplit = buttontext.split('\n')
+    tgid = btnsplit[0]
+    tgtag = btnsplit[1]
+    if buttonrelief == RAISED:
+        jsoncmd('whitelist', int(tgid), 0)
+        bottomStatusTEXT.configure(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
+        gridtabBTN3.configure(relief=SUNKEN, bg='gray')
+    if buttonrelief == SUNKEN:
+        jsoncmd('lockout', int(tgid), 0)
+        bottomStatusTEXT.configure(text='Locking out Talkgroup: ' + str(tgid), bg='green')
+        gridtabBTN3.configure(relief=RAISED, bg='SystemButtonFace')
+
+def gridtab4Func(buttontext, buttonrelief):
+    btnsplit = buttontext.split('\n')
+    tgid = btnsplit[0]
+    tgtag = btnsplit[1]
+    if buttonrelief == RAISED:
+        jsoncmd('whitelist', int(tgid), 0)
+        bottomStatusTEXT.configure(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
+        gridtabBTN4.configure(relief=SUNKEN, bg='gray')
+    if buttonrelief == SUNKEN:
+        jsoncmd('lockout', int(tgid), 0)
+        bottomStatusTEXT.configure(text='Locking out Talkgroup: ' + str(tgid), bg='green')
+        gridtabBTN4.configure(relief=RAISED, bg='SystemButtonFace')
+
+def gridtab5Func(buttontext, buttonrelief):
+    btnsplit = buttontext.split('\n')
+    tgid = btnsplit[0]
+    tgtag = btnsplit[1]
+    if buttonrelief == RAISED:
+        jsoncmd('whitelist', int(tgid), 0)
+        bottomStatusTEXT.configure(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
+        gridtabBTN5.configure(relief=SUNKEN, bg='gray')
+    if buttonrelief == SUNKEN:
+        jsoncmd('lockout', int(tgid), 0)
+        bottomStatusTEXT.configure(text='Locking out Talkgroup: ' + str(tgid), bg='green')
+        gridtabBTN5.configure(relief=RAISED, bg='SystemButtonFace')
+
+def gridtab6Func(buttontext, buttonrelief):
+    btnsplit = buttontext.split('\n')
+    tgid = btnsplit[0]
+    tgtag = btnsplit[1]
+    if buttonrelief == RAISED:
+        jsoncmd('whitelist', int(tgid), 0)
+        bottomStatusTEXT.configure(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
+        gridtabBTN6.configure(relief=SUNKEN, bg='gray')
+    if buttonrelief == SUNKEN:
+        jsoncmd('lockout', int(tgid), 0)
+        bottomStatusTEXT.configure(text='Locking out Talkgroup: ' + str(tgid), bg='green')
+        gridtabBTN6.configure(relief=RAISED, bg='SystemButtonFace')
+
+def gridtab7Func(buttontext, buttonrelief):
+    btnsplit = buttontext.split('\n')
+    tgid = btnsplit[0]
+    tgtag = btnsplit[1]
+    if buttonrelief == RAISED:
+        jsoncmd('whitelist', int(tgid), 0)
+        bottomStatusTEXT.configure(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
+        gridtabBTN7.configure(relief=SUNKEN, bg='gray')
+    if buttonrelief == SUNKEN:
+        jsoncmd('lockout', int(tgid), 0)
+        bottomStatusTEXT.configure(text='Locking out Talkgroup: ' + str(tgid), bg='green')
+        gridtabBTN7.configure(relief=RAISED, bg='SystemButtonFace')
+
+def gridtab8Func(buttontext, buttonrelief):
+    btnsplit = buttontext.split('\n')
+    tgid = btnsplit[0]
+    tgtag = btnsplit[1]
+    if buttonrelief == RAISED:
+        jsoncmd('whitelist', int(tgid), 0)
+        bottomStatusTEXT.configure(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
+        gridtabBTN8.configure(relief=SUNKEN, bg='gray')
+    if buttonrelief == SUNKEN:
+        jsoncmd('lockout', int(tgid), 0)
+        bottomStatusTEXT.configure(text='Locking out Talkgroup: ' + str(tgid), bg='green')
+        gridtabBTN8.configure(relief=RAISED, bg='SystemButtonFace')
+
+def gridtab9Func(buttontext, buttonrelief):
+    btnsplit = buttontext.split('\n')
+    tgid = btnsplit[0]
+    tgtag = btnsplit[1]
+    if buttonrelief == RAISED:
+        jsoncmd('whitelist', int(tgid), 0)
+        bottomStatusTEXT.configure(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
+        gridtabBTN9.configure(relief=SUNKEN, bg='gray')
+    if buttonrelief == SUNKEN:
+        jsoncmd('lockout', int(tgid), 0)
+        bottomStatusTEXT.configure(text='Locking out Talkgroup: ' + str(tgid), bg='green')
+        gridtabBTN9.configure(relief=RAISED, bg='SystemButtonFace')
+
+def gridtab10Func(buttontext, buttonrelief):
+    btnsplit = buttontext.split('\n')
+    tgid = btnsplit[0]
+    tgtag = btnsplit[1]
+    if buttonrelief == RAISED:
+        jsoncmd('whitelist', int(tgid), 0)
+        bottomStatusTEXT.configure(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
+        gridtabBTN10.configure(relief=SUNKEN, bg='gray')
+    if buttonrelief == SUNKEN:
+        jsoncmd('lockout', int(tgid), 0)
+        bottomStatusTEXT.configure(text='Locking out Talkgroup: ' + str(tgid), bg='green')
+        gridtabBTN10.configure(relief=RAISED, bg='SystemButtonFace')
+
+def gridtab11Func(buttontext, buttonrelief):
+    btnsplit = buttontext.split('\n')
+    tgid = btnsplit[0]
+    tgtag = btnsplit[1]
+    if buttonrelief == RAISED:
+        jsoncmd('whitelist', int(tgid), 0)
+        bottomStatusTEXT.configure(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
+        gridtabBTN11.configure(relief=SUNKEN, bg='gray')
+    if buttonrelief == SUNKEN:
+        jsoncmd('lockout', int(tgid), 0)
+        bottomStatusTEXT.configure(text='Locking out Talkgroup: ' + str(tgid), bg='green')
+        gridtabBTN11.configure(relief=RAISED, bg='SystemButtonFace')
+
+def gridtab12Func(buttontext, buttonrelief):
+    btnsplit = buttontext.split('\n')
+    tgid = btnsplit[0]
+    tgtag = btnsplit[1]
+    if buttonrelief == RAISED:
+        jsoncmd('whitelist', int(tgid), 0)
+        bottomStatusTEXT.configure(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
+        gridtabBTN12.configure(relief=SUNKEN, bg='gray')
+    if buttonrelief == SUNKEN:
+        jsoncmd('lockout', int(tgid), 0)
+        bottomStatusTEXT.configure(text='Locking out Talkgroup: ' + str(tgid), bg='green')
+        gridtabBTN12.configure(relief=RAISED, bg='SystemButtonFace')
+
+def gridtab13Func(buttontext, buttonrelief):
+    btnsplit = buttontext.split('\n')
+    tgid = btnsplit[0]
+    tgtag = btnsplit[1]
+    if buttonrelief == RAISED:
+        jsoncmd('whitelist', int(tgid), 0)
+        bottomStatusTEXT.configure(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
+        gridtabBTN13.configure(relief=SUNKEN, bg='gray')
+    if buttonrelief == SUNKEN:
+        jsoncmd('lockout', int(tgid), 0)
+        bottomStatusTEXT.configure(text='Locking out Talkgroup: ' + str(tgid), bg='green')
+        gridtabBTN13.configure(relief=RAISED, bg='SystemButtonFace')
+
+def gridtab14Func(buttontext, buttonrelief):
+    btnsplit = buttontext.split('\n')
+    tgid = btnsplit[0]
+    tgtag = btnsplit[1]
+    if buttonrelief == RAISED:
+        jsoncmd('whitelist', int(tgid), 0)
+        bottomStatusTEXT.configure(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
+        gridtabBTN14.configure(relief=SUNKEN, bg='gray')
+    if buttonrelief == SUNKEN:
+        jsoncmd('lockout', int(tgid), 0)
+        bottomStatusTEXT.configure(text='Locking out Talkgroup: ' + str(tgid), bg='green')
+        gridtabBTN14.configure(relief=RAISED, bg='SystemButtonFace')
+
+def gridtab15Func(buttontext, buttonrelief):
+    btnsplit = buttontext.split('\n')
+    tgid = btnsplit[0]
+    tgtag = btnsplit[1]
+    if buttonrelief == RAISED:
+        jsoncmd('whitelist', int(tgid), 0)
+        bottomStatusTEXT.configure(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
+        gridtabBTN15.configure(relief=SUNKEN, bg='gray')
+    if buttonrelief == SUNKEN:
+        jsoncmd('lockout', int(tgid), 0)
+        bottomStatusTEXT.configure(text='Locking out Talkgroup: ' + str(tgid), bg='green')
+        gridtabBTN15.configure(relief=RAISED, bg='SystemButtonFace')
+
+def gridtab16Func(buttontext, buttonrelief):
+    btnsplit = buttontext.split('\n')
+    tgid = btnsplit[0]
+    tgtag = btnsplit[1]
+    if buttonrelief == RAISED:
+        jsoncmd('whitelist', int(tgid), 0)
+        bottomStatusTEXT.configure(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
+        gridtabBTN16.configure(relief=SUNKEN, bg='gray')
+    if buttonrelief == SUNKEN:
+        jsoncmd('lockout', int(tgid), 0)
+        bottomStatusTEXT.configure(text='Locking out Talkgroup: ' + str(tgid), bg='green')
+        gridtabBTN16.configure(relief=RAISED, bg='SystemButtonFace')
+
+
+
+
+##Row 1 Start
+gridtabBTN1 = Button(scanGridTAB4, text='TG\rPlaceHolder', command=lambda: gridtab1Func(gridtabBTN1.cget('text'), gridtabBTN1.cget('relief')))
+gridtabBTN1.grid(column=0, row=0, sticky='NESW')
+
+gridtabBTN2 = Button(scanGridTAB4, text='TG\rPlaceHolder', command=lambda: gridtab2Func(gridtabBTN2.cget('text'), gridtabBTN2.cget('relief')))
+gridtabBTN2.grid(column=1, row=0, sticky='NESW')
+
+gridtabBTN3 = Button(scanGridTAB4, text='TG\rPlaceHolder', command=lambda: gridtab3Func(gridtabBTN3.cget('text'), gridtabBTN3.cget('relief')))
+gridtabBTN3.grid(column=2, row=0, sticky='NESW')
+
+gridtabBTN4 = Button(scanGridTAB4, text='TG\rPlaceHolder', command=lambda: gridtab4Func(gridtabBTN4.cget('text'), gridtabBTN4.cget('relief')))
+gridtabBTN4.grid(column=3, row=0, sticky='NESW')
+#Row 1 End
+
+#Row 2 Start
+gridtabBTN5 = Button(scanGridTAB4, text='TG\rPlaceHolder', command=lambda: gridtab5Func(gridtabBTN5.cget('text'), gridtabBTN5.cget('relief')))
+gridtabBTN5.grid(column=0, row=1, sticky='NESW')
+
+gridtabBTN6 = Button(scanGridTAB4, text='TG\rPlaceHolder', command=lambda: gridtab6Func(gridtabBTN6.cget('text'), gridtabBTN6.cget('relief')))
+gridtabBTN6.grid(column=1, row=1, sticky='NESW')
+
+gridtabBTN7 = Button(scanGridTAB4, text='TG\rPlaceHolder', command=lambda: gridtab7Func(gridtabBTN7.cget('text'), gridtabBTN7.cget('relief')))
+gridtabBTN7.grid(column=2, row=1, sticky='NESW')
+
+gridtabBTN8 = Button(scanGridTAB4, text='TG\rPlaceHolder', command=lambda: gridtab8Func(gridtabBTN8.cget('text'), gridtabBTN8.cget('relief')))
+gridtabBTN8.grid(column=3, row=1, sticky='NESW')
+#Row 2 End
+
+
+#Row 3 Start
+gridtabBTN9 = Button(scanGridTAB4, text='TG\rPlaceHolder', command=lambda: gridtab9Func(gridtabBTN9.cget('text'), gridtabBTN9.cget('relief')))
+gridtabBTN9.grid(column=0, row=3, sticky='NESW')
+
+gridtabBTN10 = Button(scanGridTAB4, text='TG\rPlaceHolder', command=lambda: gridtab10Func(gridtabBTN10.cget('text'), gridtabBTN10.cget('relief')))
+gridtabBTN10.grid(column=1, row=3, sticky='NESW')
+
+gridtabBTN11 = Button(scanGridTAB4, text='TG\rPlaceHolder', command=lambda: gridtab11Func(gridtabBTN11.cget('text'), gridtabBTN11.cget('relief')))
+gridtabBTN11.grid(column=2, row=3, sticky='NESW')
+
+gridtabBTN12 = Button(scanGridTAB4, text='TG\rPlaceHolder', command=lambda: gridtab12Func(gridtabBTN12.cget('text'), gridtabBTN12.cget('relief')))
+gridtabBTN12.grid(column=3, row=3, sticky='NESW')
+#Row 3 End
+
+
+#Row 4 Start
+gridtabBTN13 = Button(scanGridTAB4, text='TG\rPlaceHolder', command=lambda: gridtab13Func(gridtabBTN13.cget('text'), gridtabBTN13.cget('relief')))
+gridtabBTN13.grid(column=0, row=4, sticky='NESW')
+
+gridtabBTN14 = Button(scanGridTAB4, text='TG\rPlaceHolder', command=lambda: gridtab14Func(gridtabBTN14.cget('text'), gridtabBTN14.cget('relief')))
+gridtabBTN14.grid(column=1, row=4, sticky='NESW')
+
+gridtabBTN15 = Button(scanGridTAB4, text='TG\rPlaceHolder', command=lambda: gridtab15Func(gridtabBTN15.cget('text'), gridtabBTN15.cget('relief')))
+gridtabBTN15.grid(column=2, row=4, sticky='NESW')
+
+gridtabBTN16 = Button(scanGridTAB4, text='TG\rPlaceHolder', command=lambda: gridtab16Func(gridtabBTN16.cget('text'), gridtabBTN16.cget('relief')))
+gridtabBTN16.grid(column=3, row=4, sticky='NESW')
+#Row 4 End
+
+scanGridTAB4.columnconfigure(0, weight=1, uniform='scangrid')
+scanGridTAB4.columnconfigure(1, weight=1, uniform='scangrid')
+scanGridTAB4.columnconfigure(2, weight=1, uniform='scangrid')
+scanGridTAB4.columnconfigure(3, weight=1, uniform='scangrid')
+
+scanGridTAB4.rowconfigure(0, weight=1)
+scanGridTAB4.rowconfigure(1, weight=1)
+scanGridTAB4.rowconfigure(2, weight=1)
+scanGridTAB4.rowconfigure(3, weight=1)
+scanGridTAB4.rowconfigure(4, weight=1)
+##END Tab 4
+
+
+
+scangridTSV = open("scangrid.tsv", "r")
+tsvrow = scangridTSV.read().split("\n")
+
+tsvcount = 0
+#tsvcolumnTG = tsvcolumn.split("    ")[0]
+#tsvcolumnTAG = tsvcolumn.split("    ")[1]
+#print('TG: ' + tsvcolumnTG + ' TAG: ' + tsvcolumnTAG)
+
+for i in tsvrow:
+    #print(tsvrow[tsvcount])
+    if tsvcount == 0:
+        gridtabBTN1.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+    if tsvcount == 1:
+        gridtabBTN2.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+    if tsvcount == 2:
+        gridtabBTN3.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+    if tsvcount == 3:
+        gridtabBTN4.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+    if tsvcount == 4:
+        gridtabBTN5.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+    if tsvcount == 5:
+        gridtabBTN6.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+    if tsvcount == 6:
+        gridtabBTN7.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+    if tsvcount == 7:
+        gridtabBTN8.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+    if tsvcount == 8:
+        gridtabBTN9.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+    if tsvcount == 9:
+        gridtabBTN10.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+    if tsvcount == 10:
+        gridtabBTN11.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+    if tsvcount == 11:
+        gridtabBTN12.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+    if tsvcount == 12:
+        gridtabBTN13.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+    if tsvcount == 13:
+        gridtabBTN14.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+    if tsvcount == 14:
+        gridtabBTN15.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+    if tsvcount == 15:
+        gridtabBTN16.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+
+    tsvcount = tsvcount + 1
+    #gridtabBTN1.configure(text=tsvcolumnTAG)
+
+
+
+
+
 ###
 ###MENU DEVELOPMENT OPEN ON START
 ###
-#openmenuFUNC()
+openmenuFUNC()
 ###
 ###
 ###
@@ -936,6 +1343,39 @@ if sdrSection not in config.sections():
     confwriter(sdrSection, 'sdr', sdrVar.get())
     confwriter(sdrSection, 'lna', lnaVar.get())
     confwriter(sdrSection, 'samplerate', samplerateVar.get())
+config.read('config.ini')
+sdrVar.set(config.get(sdrSection, 'sdr'))
+lnaVar.set(config.get(sdrSection, 'lna'))
+samplerateVar.set(config.get(sdrSection, 'samplerate'))
+
+
+
+
+scanmodeTEXT = Label(menu_frame, text='Default Scanning Mode')
+scanmodeTEXT.grid(column=0, row=4, padx=15, pady=0, sticky='NW')
+
+
+scanmodeFrame = Frame(menu_frame, bd=3, relief=GROOVE)
+scanmodeFrame.grid(column=0, row=5, padx=50, sticky='NESW')
+
+menu_frame.columnconfigure(0, weight=0)
+
+scanmodebtnTEXT = Label(scanmodeFrame, text='Select Your Scan Mode: ')
+scanmodebtnTEXT.grid(column=0, row=0)
+
+scanmodebtnFrame = Frame(scanmodeFrame)
+scanmodebtnFrame.grid(column=1, row=0, sticky='NESW')
+
+scanmodeFrame.columnconfigure(0, weight=1)
+scanmodeFrame.columnconfigure(1, weight=1)
+
+##You're adding logTAB.add(scanGridTAB4, text='ScanGrid', sticky='NESW') to the grid when scanlist mode is enabled.
+scanmodeScanlistTEXT = Button(scanmodebtnFrame, text='List Scan', command=lambda:[sendCMD('enableblacklistrange'), bottomStatusTEXT.configure(text='Enabling Scanlist Mode', bg='green'), restartop25FUNC(), logTAB.add(scanGridTAB4, text='ScanGrid', sticky='NESW')])
+scanmodeScanlistTEXT.grid(column=0, row=0)
+
+scanmodeSiteTEXT = Button(scanmodebtnFrame, text='Site Scan', command=lambda:[sendCMD('disableblacklistrange'), bottomStatusTEXT.configure(text='Enabling Scanlist Mode', bg='green'), restartop25FUNC(), logTAB.hide(scanGridTAB4)])
+scanmodeSiteTEXT.grid(column=1, row=0)
+
 
 ##END MENU FRAME
 
@@ -1063,66 +1503,6 @@ else:
 
 def updateStatusText():
         statusTEXT.configure(text='SDR: ' + config.get(sdrSection, 'sdr') + "  LNA: " + config.get(sdrSection, 'lna') + "  SR: " + config.get(sdrSection, 'samplerate'))
-
-def sendCMD(function, **kwargs):
-    try:
-        # print(kwargs.keys())
-        # print(kwargs.get('siteID'))
-        if 'siteID' in kwargs:
-            argSiteid = kwargs['siteID']
-        else:
-            argSiteid = ''
-        if 'sysID' in kwargs:
-            argSysid = kwargs['sysID']
-        else:
-            argSysid = ''
-        if 'rrUser' in kwargs:
-            argrrUser = kwargs['rrUser']
-        else:
-            argrrUser = ''
-        if 'rrPass' in kwargs:
-            argrrPass = kwargs['rrPass']
-        else:
-            argrrPass = ''
-
-        # Create a TCP/IP socket
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-        # Connect the socket to the port where the server is listening
-        server_address = ('192.168.122.25', 10000)
-        print('connecting to {} port {}'.format(*server_address))
-        sock.connect(server_address)
-
-        # Send data
-        # message = b'This is the message.  It will be repeated.'
-        message = function + ', ' + str(kwargs)
-        bytemsg = bytes(message, 'utf-8')
-        print('sending {!r}'.format(bytemsg))
-        sock.sendall(bytemsg)
-
-        # Look for the response
-        amount_received = 0
-        amount_expected = len(bytemsg)
-
-        while amount_received < amount_expected:
-            data = sock.recv(1028)
-            amount_received += len(data)
-            # print('received {!r}'.format(data))
-            if data == bytemsg:
-                print('Data Match Verified')
-                bottomStatusTEXT.configure(text='ACK: ' + str(data.decode('utf-8')), bg='green')
-            else:
-                sock.sendall(bytemsg)
-                bottomStatusTEXT.configure(text='Failed to send command, trying again', bg='red')
-    except Exception as e:
-        #print(e)
-        print('Server not started: is your remote script runnning?')
-        bottomStatusTEXT.configure(text='ERROR: Couldn\'t Contact OP25 Instance', bg='red')
-
-    finally:
-        print('closing socket')
-        sock.close()
-
 
 print('MODULE LOADED: op25mch_client.py')
 bottomStatusTEXT.configure(text='MODULE LOADED: op25mch_client.py', bg='green')
