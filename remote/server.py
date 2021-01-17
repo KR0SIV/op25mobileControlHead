@@ -171,7 +171,7 @@ def generateTSV(rrUser, rrPass, rrsysid, op25dir):
                 modulation = '"CQPSK"'
                 tagfile = '"' + op25OutputPath + sysid + '_talkgroups.tsv"'
                 whitelist = '""'
-                blacklist = '""'
+                blacklist = '"' +op25dir + '/blacklist.tsv"'
                 centerfreq = '""'
 
                 rfss = str(result[count].rfss)
@@ -204,6 +204,55 @@ def startop25(sdr='rtl', lna='49', samplerate='2000000', trunkfile='trunk.tsv', 
 def stopop25():
     import os
     os.popen('screen -X -S op25 quit')
+
+def blacklistRange(enabled=bool):
+    try:
+        blacklistFile = open('blacklist.tsv', 'r+')
+        blacklist = blacklistFile.read()
+        print("Full Blacklist: " + blacklist)
+    except:
+        blacklistFile = open('blacklist.tsv', 'w')
+        blacklistFile.write('#0\t65536')
+        blacklistFile = open('blacklist.tsv', 'r+')
+        blacklist = blacklistFile.read()
+        print("Full Blacklist: " + blacklist)
+    if enabled == True: #True means you  want the range to exist, remove comment
+        print('true')
+        if "#0" in blacklist: #IF you don't see
+            print('Block All Talkgroups by Default')
+            modified = re.sub('^#0', '0', blacklist)
+            blacklistFile = open('blacklist.tsv', 'w')
+            blacklistFile.write(modified)
+            blacklistFile.close()
+        if "#0" not in blacklist:
+            print('Block Only Talkgroups in blacklist')
+            pass
+    if enabled == False: #False means you want to comment out the range
+        print('false')
+        if "#0" in blacklist: #If you see "#0" then you lave it alone
+            print('Block All Talkgroups by Default')
+            pass
+        if "#0" not in blacklist: #if you see see "0" then append the #
+            print('Block Only Talkgroups in blacklist')
+            modified = re.sub('^0', '#0', blacklist)
+            blacklistFile = open('blacklist.tsv', 'w')
+            blacklistFile.write(modified)
+            blacklistFile.close()
+
+
+##Working on blacklist range, there is a blacklistrange command run around the startop25 command1!!!!!!!!!1
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+
 
 ####################Command and Control Socket Server####################
 
@@ -246,6 +295,11 @@ while True:
                     startop25(sdr=dict['sdr'], lna=dict['lna'], samplerate=dict['samplerate'], trunkfile=dict['trunkfile'], op25dir=dict['op25dir'])
                 if function == 'stopop25':
                     stopop25()
+                if function == 'enableblacklistrange':
+                    blacklistRange(enabled=True)
+                if function == 'disableblacklistrange':
+                    blacklistRange(enabled=False)
+
 
             else:
                 #print('no data from', client_address)
