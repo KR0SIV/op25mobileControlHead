@@ -176,8 +176,7 @@ def update():
                 call_logTEXT.tag_configure('highlightline', background='lightgreen')
                 call_logTEXT.tag_configure('unhighlightline', background='gray')
                 bottomStatusTEXT.configure(text='Sending Remote Command to Start OP25 With Your Selected Defaults')
-                sendCMD(function='startop25', sdr='rtl', lna='49', samplerate='2000000', trunkfile='trunk.tsv',
-                        offset='0', op25dir='/home/op25/op25/op25/gr-op25_repeater/apps/')
+                sendCMD(function='startop25', sdr='rtl', lna='49', samplerate='2000000', trunkfile='trunk.tsv', op25dir='/home/op25/op25/op25/gr-op25_repeater/apps/')
                 time.sleep(10)
                 bottomStatusTEXT.configure(text='Attempting to reconnect', bg='red')
                 if jsoncmd('update', 0, 0) == None:
@@ -789,12 +788,20 @@ themegTAB3.columnconfigure(0, weight=1)
 themegTAB3.columnconfigure(1, weight=1)
 themegTAB3.columnconfigure(2, weight=1)
 ##END Tab 3
+###
+###MENU DEVELOPMENT OPEN ON START
+###
+#openmenuFUNC()
+###
+###
+###
 
 
 ##MENU FRAME
 closemenuBTN = Button(menu_frame, text=" ≡ ", bg=display_color, activebackground=display_color, font=('Digital-7 Mono', 12), command=closemenuFUNC)
 closemenuBTN.grid(row=0, column=5, sticky='E')
 menu_frame.columnconfigure(0, weight=1)
+menu_frame.columnconfigure(5, weight=1)
 
 rrloginTEXT = Label(menu_frame, text='Radio Reference')
 rrloginTEXT.grid(column=0, row=0, padx=15, pady=0, sticky='NW')
@@ -848,6 +855,87 @@ enterrrBTN = Button(rrloginFrame, text='Enter', command=submitrr)
 enterrrBTN.grid(column=5, row=3, pady=5, padx=5)
 
 
+
+
+defaultSDRTEXT = Label(menu_frame, text='Default SDR Settings')
+defaultSDRTEXT.grid(column=0, row=2, padx=15, pady=0, sticky='NW')
+
+
+defaultSDRFrame = Frame(menu_frame, bd=3, relief=GROOVE)
+defaultSDRFrame.grid(column=0, row=3, padx=50, sticky='NESW')
+
+menu_frame.columnconfigure(0, weight=0)
+
+
+
+def sdrFUNC(selection):
+    config.set(sdrSection, 'sdr', selection)
+    write_file()
+
+def lnaFUNC(selection):
+    config.set(sdrSection, 'lna', selection)
+    write_file()
+
+def samplerateFUNC(selection):
+    config.set(sdrSection, 'samplerate', selection)
+    write_file()
+
+def restartop25FUNC():
+    config.read('config.ini')
+    sdr = config.get(sdrSection, 'sdr')
+    lna = config.get(sdrSection, 'lna')
+    samplerate = config.get(sdrSection, 'samplerate')
+    sendCMD(function='stopop25')
+    time.sleep(2)
+    updateStatusText()
+    sendCMD(function='startop25', sdr=sdr, lna=lna, samplerate=samplerate, trunkfile='trunk.tsv', op25dir='/home/op25/op25/op25/gr-op25_repeater/apps/')
+
+
+sdrTEXT = Label(defaultSDRFrame, text='SDR: ')
+sdrTEXT.grid(column=0, row=0, sticky='NEWS')
+
+sdrVar = StringVar(defaultSDRFrame)
+sdrVar.set("RTL") # default value
+
+sdrOptions = OptionMenu(defaultSDRFrame, sdrVar, "rtl", "rtl_tcp", "airspy", "hackrf", command=sdrFUNC)
+sdrOptions.grid(column=1, row=0, sticky='NESW')
+
+#defaultSDRFrame.columnconfigure(0, weight=1, uniform='sdrMenu')
+defaultSDRFrame.columnconfigure(1, weight=1, uniform='sdrMenu')
+#defaultSDRFrame.columnconfigure(2, weight=1, uniform='sdrMenu')
+#defaultSDRFrame.columnconfigure(3, weight=1, uniform='sdrMenu')
+
+
+
+lnaTEXT = Label(defaultSDRFrame, text='GAIN: ')
+lnaTEXT.grid(column=0, row=1, sticky='NEWS')
+
+lnaVar = StringVar(defaultSDRFrame)
+lnaVar.set("35") # default value
+
+lnaOptions = OptionMenu(defaultSDRFrame, lnaVar, '0', '10', '15', '20', '25', '30', '35', '40', '45', '49', command=lnaFUNC)
+lnaOptions.grid(column=1, row=1, sticky='NESW')
+
+
+samplerateTEXT = Label(defaultSDRFrame, text='SR:   ')
+samplerateTEXT.grid(column=0, row=2, sticky='NEWS')
+
+samplerateVar = StringVar(defaultSDRFrame)
+samplerateVar.set("1.4e6") # default value
+
+samplerateOptions = OptionMenu(defaultSDRFrame, samplerateVar, '1.2e6', '1.4e6', '2.0e6', '2.8e6', '3.2e6', command=samplerateFUNC)
+samplerateOptions.grid(column=1, row=2, sticky='NESW')
+
+restartop25BTN = Button(defaultSDRFrame, text='Restart OP25', command=restartop25FUNC)
+restartop25BTN.grid(column=1, row=3, pady=5, padx=5, sticky='E')
+
+config.read('config.ini')
+sdrSection = 'SDR_Defaults'
+if sdrSection not in config.sections():
+    config.add_section(sdrSection)
+    confwriter(sdrSection, 'sdr', sdrVar.get())
+    confwriter(sdrSection, 'lna', lnaVar.get())
+    confwriter(sdrSection, 'samplerate', samplerateVar.get())
 
 ##END MENU FRAME
 
@@ -973,6 +1061,8 @@ else:
     #t2.start()
 
 
+def updateStatusText():
+        statusTEXT.configure(text='SDR: ' + config.get(sdrSection, 'sdr') + "  LNA: " + config.get(sdrSection, 'lna') + "  SR: " + config.get(sdrSection, 'samplerate'))
 
 def sendCMD(function, **kwargs):
     try:
@@ -1036,6 +1126,9 @@ def sendCMD(function, **kwargs):
 
 print('MODULE LOADED: op25mch_client.py')
 bottomStatusTEXT.configure(text='MODULE LOADED: op25mch_client.py', bg='green')
+
+if tagTEXT.cget('text') == "Connecting...":
+    updateStatusText()
 
 
 #####TRAILING SLASH IS VERY IMPORTANT
