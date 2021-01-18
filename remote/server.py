@@ -198,7 +198,7 @@ def startop25(sdr='rtl', lna='49', samplerate='2000000', trunkfile='trunk.tsv', 
     import os
 
     #op25dir = "op25/op25/gr25-op_repeater/apps"
-    screen = "screen -Sdm op25 ./rx.py --args '" + sdr + "' -N 'LNA:" + lna + "' -S " + samplerate + " -o 25000 -T " + trunkfile + " -V -2 -X -l http:0.0.0.0:8080"
+    screen = "screen -Sdm op25 ./rx.py --args '" + sdr + "' -N 'LNA:" + lna + "' -S " + samplerate + " -o 25000 -T " + trunkfile + " -U -V -2 -X -l http:0.0.0.0:8080"
     os.popen('cd ' + op25dir + ' && ' + screen)
 
 def stopop25():
