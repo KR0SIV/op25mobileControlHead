@@ -40,7 +40,7 @@ def jsoncmd(command, arg1, arg2):
             #print('found uri')
             return requests.post(op25uri, json=[{"command":command,"arg1":int(arg1),"arg2":int(arg2)}])
         except:
-            bottomStatusTEXT.configure(text='I\'m sorry, seems you\'re not running OP25 or the Remote Command Script. Fix that and Restart', bg='red')
+            sysmsgUPDATE(text='ERROR: Couldn\'t Contact Remote.py', bg='red')
 
 
 def confwriter(argsection, argoption, argvalue):
@@ -63,9 +63,10 @@ def formatchan(frequency):
 
 ##Update function, runs in a thread to keep checcking for new data from the OP25 web server.
 def update():
-    callLog = ""
     count = 1
     current = ""
+    currentAlert = ''
+    alertsTSV = open("alerts.tsv", "r").read()
     print('Running Update')
     while True:
         # time.sleep(0.5)
@@ -93,6 +94,14 @@ def update():
                 else:
                     tag = ('Talkgroup ID: ' + tgid + ' [' + str(hex(int(tgid))) + ']')
                 tagTEXT.configure(text=tag)
+                if grpaddr in alertsTSV:
+                    if currentAlert != grpaddr:
+                        currentAlert = grpaddr
+                        alertTEXT.configure(text=tag[:13], fg='red')
+                        timestamp = str(datetime.now().strftime('%I:%M:%S'))
+                        row3alertTEXT.configure(text='Last Alert at: ' + timestamp)
+                        from playsound import playsound
+                        playsound('static/audio/beep_short_on.wav')
                 offset = str(data[0]['fine_tune'])
                 #offsetTEXT.configure(text='FREQ OFFSET: ' + offset)
                 freq = str(data[0]['freq'])
@@ -101,18 +110,21 @@ def update():
                 #print(e)
                 pass
             try:
+                #srcaddrTEXT.configure(text='SRC: ' + srcaddr)
+                grpaddr = str(data[1]['grpaddr'])
                 enc = str(data[1]['encrypted'])
                 if enc == str(0):
                     encTEXT.configure(fg='grey')
                 else:
                     encTEXT.configure(fg='black')
-                    if encTEXT.cget(bg='black'):
-                        encTEXT.configure(fg='white')
+                    alertTEXT.configure(text=grpaddr, fg='red')
+                    sysmsgUPDATE(text='Encrypted Call Detected on GRP: ' + grpaddr, bg='yellow')
+                    #if encTEXT.cget(bg='black'):
+                    #    encTEXT.configure(fg='white')
                 srcaddr = str(data[1]['srcaddr'])
-                #srcaddrTEXT.configure(text='SRC: ' + srcaddr)
-                grpaddr = str(data[1]['grpaddr'])
                 if grpaddr == str(0):
                     tagTEXT.configure(text='Scanning...')
+                    alertTEXT.configure(fg='#383b39')
                 if grpaddr != str(0):
                     if current != tag:
                         regexp = re.compile('[a-z]|[A-Z]')
@@ -167,30 +179,21 @@ def update():
                 pass
 
         except:
+                sysmsgUPDATE(text='Reconnecting to OP25 Instance', bg='red')
                 tagTEXT.configure(text='Connecting...')
-                bottomStatusTEXT.configure(text='Failed to Connect to OP25 Instance, trying again in 10 Seconds..', bg='red')
-                count = 0
-                call_logTEXT.insert("1.0", 'Reconnecting to OP25 Instance' + '\t' + str(datetime.now().strftime('%I:%M:%S')) + '\n')
-                call_logTEXT.tag_add('highlightline', '1.0', '2.0')
-                call_logTEXT.tag_add('unhighlightline', '2.0', END)
-                call_logTEXT.tag_configure('highlightline', background='lightgreen')
-                call_logTEXT.tag_configure('unhighlightline', background='gray')
-                bottomStatusTEXT.configure(text='Sending Remote Command to Start OP25 With Your Selected Defaults')
+                time.sleep(1)
+                sysmsgUPDATE(text='Remote: Start OP25', bg='green')
                 sendCMD(function='startop25', sdr='rtl', lna='49', samplerate='2000000', trunkfile='trunk.tsv', op25dir='/home/op25/op25/op25/gr-op25_repeater/apps/')
-                time.sleep(10)
-                bottomStatusTEXT.configure(text='Attempting to reconnect', bg='red')
+                time.sleep(7)
+                sysmsgUPDATE(text='Attempting to reconnect', bg='red')
                 if jsoncmd('update', 0, 0) == None:
                     pass
                 else:
-                    bottomStatusTEXT.configure(text='Connected!', bg='green')
-                    bottomStatusTEXT.configure(text='OP25 Instance Connected!', bg='green')
-                    call_logTEXT.insert("1.0", 'OP25 Instance Connected' + '\t' + str(
-                        datetime.now().strftime('%I:%M:%S')) + '\n')
-                    call_logTEXT.tag_add('highlightline', '1.0', '2.0')
-                    call_logTEXT.tag_add('unhighlightline', '2.0', END)
-                    call_logTEXT.tag_configure('highlightline', background='lightgreen')
-                    call_logTEXT.tag_configure('unhighlightline', background='gray')
+                    sysmsgUPDATE(text='OP25 Instance Connected!', bg='green')
                 update()
+
+
+
 
 
 
@@ -216,6 +219,8 @@ def nightMode():
         count = count - 1
     nightmodePrompt.grid_remove()
 
+
+
 ##Button Functions
 def holdFUNC(input):
     if holdBTN.cget('relief') == SUNKEN:
@@ -227,10 +232,13 @@ def holdFUNC(input):
     else:
         if int(input) != 0:
 
-            holdBTN.configure(relief=SUNKEN, fg='red', text='HOLD\n'+input)
+            holdBTN.configure(relief=SUNKEN, fg='red', text=input)
             #requests.post(op25uri, json=[{"command": "hold", "arg1": int(input), "arg2": 0}])
             jsoncmd("hold", int(input), 0)
 
+def lockoutFUNC():
+    #requests.post(op25uri, json=[{"command": "skip", "arg1": 0, "arg2": 0}])
+    jsoncmd('lockout', 0, 0)
 
 def skipFUNC():
     #requests.post(op25uri, json=[{"command": "skip", "arg1": 0, "arg2": 0}])
@@ -377,14 +385,15 @@ def sendCMD(function, **kwargs):
             # print('received {!r}'.format(data))
             if data == bytemsg:
                 print('Data Match Verified')
-                bottomStatusTEXT.configure(text='ACK: ' + str(data.decode('utf-8')), bg='green')
+                #re.findall("^(.*)", data.decode('utf-8'))
+                sysmsgUPDATE(text='Remote: ACK from CMD: ' + str(data.decode('utf-8').split(",")[0]), bg='green')
             else:
                 sock.sendall(bytemsg)
-                bottomStatusTEXT.configure(text='Failed to send command, trying again', bg='red')
+                sysmsgUPDATE(text='Remote: Ack not Found, Retrying...', bg='red')
     except Exception as e:
         #print(e)
         print('Server not started: is your remote script runnning?')
-        bottomStatusTEXT.configure(text='ERROR: Couldn\'t Contact OP25 Instance', bg='red')
+        sysmsgUPDATE(text='ERROR: Couldn\'t Contact OP25 Instance', bg='red')
 
     finally:
         print('closing socket')
@@ -637,9 +646,6 @@ rightFrame.rowconfigure(1, weight=2, uniform='RightFrameRowGrouping')
 statusTEXT = Label(leftstatusFrame, text="System Placeholder", bg=display_color, font=('Digital-7 Mono', 10))
 statusTEXT.grid(column=0, row=0, sticky='W')
 
-encTEXT = Label(leftstatusFrame, text="Ø", bg=display_color, fg='grey', font=('Digital-7 Mono', 10))
-encTEXT.grid(column=5, row=0, sticky='E')
-
 tagTEXT = Label(leftalphaFrame, text="Connecting...", bg=display_color, font=('Digital-7 Mono', 32), anchor=SW, justify=LEFT)
 tagTEXT.grid(column=0, row=1, sticky='NW')
 
@@ -656,6 +662,9 @@ holdBTN.grid(column=0, row=0, sticky='nesw')
 gotoBTN = Button(leftbuttonFrame, text="GOTO", bg='lightgray', font=('Digital-7 Mono', 22), relief=RAISED, command=gotoFUNC)###CONTAINS PLACEHOLDER TEXT
 gotoBTN.grid(column=0, row=1, sticky='nesw')
 
+lockoutBTN = Button(leftbuttonFrame, text="L/O", bg='lightgray', font=('Digital-7 Mono', 22), command=lockoutFUNC)
+lockoutBTN.grid(column=0, row=3, sticky='nesw')
+
 
 skipBTN = Button(leftbuttonFrame, text="SKIP", bg='lightgray', font=('Digital-7 Mono', 22), command=skipFUNC)###CONTAINS PLACEHOLDER TEXT
 skipBTN.grid(column=0, row=2, sticky='nesw')
@@ -663,6 +672,7 @@ skipBTN.grid(column=0, row=2, sticky='nesw')
 leftbuttonFrame.rowconfigure(0, weight=1)
 leftbuttonFrame.rowconfigure(1, weight=1)
 leftbuttonFrame.rowconfigure(2, weight=1)
+leftbuttonFrame.rowconfigure(3, weight=1)
 ##END Left Status Frame Labels and Positions
 
 def d(event):
@@ -686,7 +696,7 @@ def keypadentFUNC(input):
     #requests.post(op25uri, json=[{"command": "hold", "arg1": int(value), "arg2": 0}, {"command": "update", "arg1": 0, "arg2": 0}])
     jsoncmd('hold', int(value), 0)
     jsoncmd('update', 0, 0)
-    holdBTN.configure(fg='red', relief=SUNKEN, text='HOLD\n'+input)
+    holdBTN.configure(fg='red', relief=SUNKEN, text=input)
     gotoBTN.configure(relief=RAISED)
 
 def keypadclearFUNC():
@@ -772,7 +782,19 @@ leftsiteFrame.columnconfigure(3, weight=1)
 
 ##END Right site details frame
 
-#Label(rightalertFrame, text='Placeholder').grid(row=0, column=0, columnspan=4, sticky='NSEW')
+
+encTEXT = Label(rightalertFrame, text="ENCRYPTED CHANNEL Ø", bg=display_color, fg='grey', font=('Digital-7 Mono', 10))
+encTEXT.grid(column=0, row=0, columnspan=4, sticky='NSEW')
+
+alertTEXT = Label(rightalertFrame, text='TSV Loaded', bg=display_color, font=('Digital-7 Mono', 45))
+alertTEXT.grid(row=1, column=0, columnspan=4, sticky='NSEW')
+
+row3alertTEXT = Label(rightalertFrame, text='', bg=display_color, fg='grey', font=('Digital-7 Mono', 10))
+row3alertTEXT.grid(row=2, column=0, columnspan=4, sticky='NSEW')
+
+rightalertFrame.rowconfigure(0, weight=0, uniform='alerts')
+rightalertFrame.rowconfigure(1, weight=2, uniform='alerts')
+rightalertFrame.rowconfigure(2, weight=1, uniform='alerts')
 
 def openmenuFUNC():
     menu_frame.grid(column=0, row=0, rowspan=2, sticky='NESW')
@@ -832,6 +854,11 @@ syslogsyslogTAB2Label = Label(syslogTAB2, text="This is Tab 2", bg='lightgray')
 
 syslogsyslogTAB2Label.grid(column=1, row=0, padx=10, pady=10, sticky='NESW')
 
+sys_logTEXT = Text(syslogTAB2, bg='gray', relief=SOLID)
+sys_logTEXT.grid(column=0, row=0, padx=2, pady=2, sticky='NESW')
+
+
+
 
 ##Tab3 Color Picker
 tanBTN = Button(themegTAB3, text='TAN', bg='tan', command=lambda: colorFUNC('tan'))
@@ -868,11 +895,11 @@ def gridtab1Func(buttontext, buttonrelief):
     tgtag = btnsplit[1]
     if buttonrelief == RAISED:
         jsoncmd('whitelist', int(tgid), 0)
-        bottomStatusTEXT.configure(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
+        sysmsgUPDATE(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN1.configure(relief=SUNKEN, bg='gray')
     if buttonrelief == SUNKEN:
         jsoncmd('lockout', int(tgid), 0)
-        bottomStatusTEXT.configure(text='Locking out Talkgroup: ' + str(tgid), bg='green')
+        sysmsgUPDATE(text='Locking out Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN1.configure(relief=RAISED, bg='SystemButtonFace')
 
 def gridtab2Func(buttontext, buttonrelief):
@@ -881,11 +908,11 @@ def gridtab2Func(buttontext, buttonrelief):
     tgtag = btnsplit[1]
     if buttonrelief == RAISED:
         jsoncmd('whitelist', int(tgid), 0)
-        bottomStatusTEXT.configure(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
+        sysmsgUPDATE(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN2.configure(relief=SUNKEN, bg='gray')
     if buttonrelief == SUNKEN:
         jsoncmd('lockout', int(tgid), 0)
-        bottomStatusTEXT.configure(text='Locking out Talkgroup: ' + str(tgid), bg='green')
+        sysmsgUPDATE(text='Locking out Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN2.configure(relief=RAISED, bg='SystemButtonFace')
 
 def gridtab3Func(buttontext, buttonrelief):
@@ -894,11 +921,11 @@ def gridtab3Func(buttontext, buttonrelief):
     tgtag = btnsplit[1]
     if buttonrelief == RAISED:
         jsoncmd('whitelist', int(tgid), 0)
-        bottomStatusTEXT.configure(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
+        sysmsgUPDATE(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN3.configure(relief=SUNKEN, bg='gray')
     if buttonrelief == SUNKEN:
         jsoncmd('lockout', int(tgid), 0)
-        bottomStatusTEXT.configure(text='Locking out Talkgroup: ' + str(tgid), bg='green')
+        sysmsgUPDATE(text='Locking out Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN3.configure(relief=RAISED, bg='SystemButtonFace')
 
 def gridtab4Func(buttontext, buttonrelief):
@@ -907,11 +934,11 @@ def gridtab4Func(buttontext, buttonrelief):
     tgtag = btnsplit[1]
     if buttonrelief == RAISED:
         jsoncmd('whitelist', int(tgid), 0)
-        bottomStatusTEXT.configure(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
+        sysmsgUPDATE(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN4.configure(relief=SUNKEN, bg='gray')
     if buttonrelief == SUNKEN:
         jsoncmd('lockout', int(tgid), 0)
-        bottomStatusTEXT.configure(text='Locking out Talkgroup: ' + str(tgid), bg='green')
+        sysmsgUPDATE(text='Locking out Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN4.configure(relief=RAISED, bg='SystemButtonFace')
 
 def gridtab5Func(buttontext, buttonrelief):
@@ -920,11 +947,11 @@ def gridtab5Func(buttontext, buttonrelief):
     tgtag = btnsplit[1]
     if buttonrelief == RAISED:
         jsoncmd('whitelist', int(tgid), 0)
-        bottomStatusTEXT.configure(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
+        sysmsgUPDATE(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN5.configure(relief=SUNKEN, bg='gray')
     if buttonrelief == SUNKEN:
         jsoncmd('lockout', int(tgid), 0)
-        bottomStatusTEXT.configure(text='Locking out Talkgroup: ' + str(tgid), bg='green')
+        sysmsgUPDATE(text='Locking out Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN5.configure(relief=RAISED, bg='SystemButtonFace')
 
 def gridtab6Func(buttontext, buttonrelief):
@@ -933,11 +960,11 @@ def gridtab6Func(buttontext, buttonrelief):
     tgtag = btnsplit[1]
     if buttonrelief == RAISED:
         jsoncmd('whitelist', int(tgid), 0)
-        bottomStatusTEXT.configure(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
+        sysmsgUPDATE(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN6.configure(relief=SUNKEN, bg='gray')
     if buttonrelief == SUNKEN:
         jsoncmd('lockout', int(tgid), 0)
-        bottomStatusTEXT.configure(text='Locking out Talkgroup: ' + str(tgid), bg='green')
+        sysmsgUPDATE(text='Locking out Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN6.configure(relief=RAISED, bg='SystemButtonFace')
 
 def gridtab7Func(buttontext, buttonrelief):
@@ -946,11 +973,11 @@ def gridtab7Func(buttontext, buttonrelief):
     tgtag = btnsplit[1]
     if buttonrelief == RAISED:
         jsoncmd('whitelist', int(tgid), 0)
-        bottomStatusTEXT.configure(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
+        sysmsgUPDATE(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN7.configure(relief=SUNKEN, bg='gray')
     if buttonrelief == SUNKEN:
         jsoncmd('lockout', int(tgid), 0)
-        bottomStatusTEXT.configure(text='Locking out Talkgroup: ' + str(tgid), bg='green')
+        sysmsgUPDATE(text='Locking out Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN7.configure(relief=RAISED, bg='SystemButtonFace')
 
 def gridtab8Func(buttontext, buttonrelief):
@@ -959,11 +986,11 @@ def gridtab8Func(buttontext, buttonrelief):
     tgtag = btnsplit[1]
     if buttonrelief == RAISED:
         jsoncmd('whitelist', int(tgid), 0)
-        bottomStatusTEXT.configure(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
+        sysmsgUPDATE(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN8.configure(relief=SUNKEN, bg='gray')
     if buttonrelief == SUNKEN:
         jsoncmd('lockout', int(tgid), 0)
-        bottomStatusTEXT.configure(text='Locking out Talkgroup: ' + str(tgid), bg='green')
+        sysmsgUPDATE(text='Locking out Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN8.configure(relief=RAISED, bg='SystemButtonFace')
 
 def gridtab9Func(buttontext, buttonrelief):
@@ -972,11 +999,11 @@ def gridtab9Func(buttontext, buttonrelief):
     tgtag = btnsplit[1]
     if buttonrelief == RAISED:
         jsoncmd('whitelist', int(tgid), 0)
-        bottomStatusTEXT.configure(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
+        sysmsgUPDATE(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN9.configure(relief=SUNKEN, bg='gray')
     if buttonrelief == SUNKEN:
         jsoncmd('lockout', int(tgid), 0)
-        bottomStatusTEXT.configure(text='Locking out Talkgroup: ' + str(tgid), bg='green')
+        sysmsgUPDATE(text='Locking out Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN9.configure(relief=RAISED, bg='SystemButtonFace')
 
 def gridtab10Func(buttontext, buttonrelief):
@@ -985,11 +1012,11 @@ def gridtab10Func(buttontext, buttonrelief):
     tgtag = btnsplit[1]
     if buttonrelief == RAISED:
         jsoncmd('whitelist', int(tgid), 0)
-        bottomStatusTEXT.configure(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
+        sysmsgUPDATE(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN10.configure(relief=SUNKEN, bg='gray')
     if buttonrelief == SUNKEN:
         jsoncmd('lockout', int(tgid), 0)
-        bottomStatusTEXT.configure(text='Locking out Talkgroup: ' + str(tgid), bg='green')
+        sysmsgUPDATE(text='Locking out Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN10.configure(relief=RAISED, bg='SystemButtonFace')
 
 def gridtab11Func(buttontext, buttonrelief):
@@ -998,11 +1025,11 @@ def gridtab11Func(buttontext, buttonrelief):
     tgtag = btnsplit[1]
     if buttonrelief == RAISED:
         jsoncmd('whitelist', int(tgid), 0)
-        bottomStatusTEXT.configure(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
+        sysmsgUPDATE(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN11.configure(relief=SUNKEN, bg='gray')
     if buttonrelief == SUNKEN:
         jsoncmd('lockout', int(tgid), 0)
-        bottomStatusTEXT.configure(text='Locking out Talkgroup: ' + str(tgid), bg='green')
+        sysmsgUPDATE(text='Locking out Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN11.configure(relief=RAISED, bg='SystemButtonFace')
 
 def gridtab12Func(buttontext, buttonrelief):
@@ -1011,11 +1038,11 @@ def gridtab12Func(buttontext, buttonrelief):
     tgtag = btnsplit[1]
     if buttonrelief == RAISED:
         jsoncmd('whitelist', int(tgid), 0)
-        bottomStatusTEXT.configure(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
+        sysmsgUPDATE(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN12.configure(relief=SUNKEN, bg='gray')
     if buttonrelief == SUNKEN:
         jsoncmd('lockout', int(tgid), 0)
-        bottomStatusTEXT.configure(text='Locking out Talkgroup: ' + str(tgid), bg='green')
+        sysmsgUPDATE(text='Locking out Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN12.configure(relief=RAISED, bg='SystemButtonFace')
 
 def gridtab13Func(buttontext, buttonrelief):
@@ -1024,11 +1051,11 @@ def gridtab13Func(buttontext, buttonrelief):
     tgtag = btnsplit[1]
     if buttonrelief == RAISED:
         jsoncmd('whitelist', int(tgid), 0)
-        bottomStatusTEXT.configure(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
+        sysmsgUPDATE(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN13.configure(relief=SUNKEN, bg='gray')
     if buttonrelief == SUNKEN:
         jsoncmd('lockout', int(tgid), 0)
-        bottomStatusTEXT.configure(text='Locking out Talkgroup: ' + str(tgid), bg='green')
+        sysmsgUPDATE(text='Locking out Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN13.configure(relief=RAISED, bg='SystemButtonFace')
 
 def gridtab14Func(buttontext, buttonrelief):
@@ -1037,11 +1064,11 @@ def gridtab14Func(buttontext, buttonrelief):
     tgtag = btnsplit[1]
     if buttonrelief == RAISED:
         jsoncmd('whitelist', int(tgid), 0)
-        bottomStatusTEXT.configure(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
+        sysmsgUPDATE(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN14.configure(relief=SUNKEN, bg='gray')
     if buttonrelief == SUNKEN:
         jsoncmd('lockout', int(tgid), 0)
-        bottomStatusTEXT.configure(text='Locking out Talkgroup: ' + str(tgid), bg='green')
+        sysmsgUPDATE(text='Locking out Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN14.configure(relief=RAISED, bg='SystemButtonFace')
 
 def gridtab15Func(buttontext, buttonrelief):
@@ -1050,11 +1077,11 @@ def gridtab15Func(buttontext, buttonrelief):
     tgtag = btnsplit[1]
     if buttonrelief == RAISED:
         jsoncmd('whitelist', int(tgid), 0)
-        bottomStatusTEXT.configure(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
+        sysmsgUPDATE(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN15.configure(relief=SUNKEN, bg='gray')
     if buttonrelief == SUNKEN:
         jsoncmd('lockout', int(tgid), 0)
-        bottomStatusTEXT.configure(text='Locking out Talkgroup: ' + str(tgid), bg='green')
+        sysmsgUPDATE(text='Locking out Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN15.configure(relief=RAISED, bg='SystemButtonFace')
 
 def gridtab16Func(buttontext, buttonrelief):
@@ -1063,11 +1090,11 @@ def gridtab16Func(buttontext, buttonrelief):
     tgtag = btnsplit[1]
     if buttonrelief == RAISED:
         jsoncmd('whitelist', int(tgid), 0)
-        bottomStatusTEXT.configure(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
+        sysmsgUPDATE(text='Whitelisting Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN16.configure(relief=SUNKEN, bg='gray')
     if buttonrelief == SUNKEN:
         jsoncmd('lockout', int(tgid), 0)
-        bottomStatusTEXT.configure(text='Locking out Talkgroup: ' + str(tgid), bg='green')
+        sysmsgUPDATE(text='Locking out Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN16.configure(relief=RAISED, bg='SystemButtonFace')
 
 
@@ -1206,9 +1233,11 @@ for i in tsvrow:
 
 ##MENU FRAME
 closemenuBTN = Button(menu_frame, text=" ≡ ", bg=display_color, activebackground=display_color, font=('Digital-7 Mono', 12), command=closemenuFUNC)
-closemenuBTN.grid(row=0, column=5, sticky='E')
+closemenuBTN.grid(row=0, column=2, sticky='E')
+
 menu_frame.columnconfigure(0, weight=1)
-menu_frame.columnconfigure(5, weight=1)
+menu_frame.columnconfigure(1, weight=1)
+menu_frame.columnconfigure(2, weight=0)
 
 rrloginTEXT = Label(menu_frame, text='Radio Reference')
 rrloginTEXT.grid(column=0, row=0, padx=15, pady=0, sticky='NW')
@@ -1235,18 +1264,11 @@ if 'RadioReference' in config.sections():
     passwordENT.insert(0, config.get('RadioReference', 'rrpass'))
 
 def submitrr():
-    if rr_ischecked.get() == str(0):
-        print('start rr command i guess')
-        pass
-    else:
         confwriter('RadioReference', 'rruser', usernameENT.get())
         confwriter('RadioReference', 'rrpass', passwordENT.get())
 
 
-rr_ischecked = StringVar()
-rememberCHK = Checkbutton(rrloginFrame, text='Remember Me?', variable=rr_ischecked)
-rememberCHK.grid(column=3, row=3)
-rememberCHK.deselect()
+
 rrloginFrame.rowconfigure(4, weight=1)
 
 def clearrrFUNC():
@@ -1258,7 +1280,7 @@ clearrrBTN = Button(rrloginFrame, text='Clear', command=clearrrFUNC)
 clearrrBTN.grid(column=4, row=3)
 
 
-enterrrBTN = Button(rrloginFrame, text='Enter', command=submitrr)
+enterrrBTN = Button(rrloginFrame, text='Save', command=submitrr)
 enterrrBTN.grid(column=5, row=3, pady=5, padx=5)
 
 
@@ -1271,7 +1293,144 @@ defaultSDRTEXT.grid(column=0, row=2, padx=15, pady=0, sticky='NW')
 defaultSDRFrame = Frame(menu_frame, bd=3, relief=GROOVE)
 defaultSDRFrame.grid(column=0, row=3, padx=50, sticky='NESW')
 
-menu_frame.columnconfigure(0, weight=0)
+menu_frame.columnconfigure(0, weight=1)
+
+
+
+
+
+rrimportFrame = Frame(menu_frame, bd=3, relief=GROOVE)
+rrimportFrame.grid(column=1, row=1, sticky='NSEW', padx=25)
+
+
+
+
+def rrpopulateSystems(selection):
+    import requests
+    from bs4 import BeautifulSoup
+    import re
+
+
+
+    # rrSearch = 'https://www.radioreference.com/apps/db/?action=regexp&regexp=' + input('State: ')
+    rrSearch = 'https://www.radioreference.com/apps/db/?action=regexp&regexp=' + selection
+    r = requests.get(rrSearch)
+
+    soup = BeautifulSoup(r.text, features='lxml')
+    table = soup.find('table', {"class": "rrtable"})
+
+    items = re.findall("sid(.*)", str(table))
+
+    #print(items)
+
+    count = 0
+    result =[]
+
+    for i in items:
+        test = items[count].split('>')
+
+        sysid = re.findall("\d{1,10}", str(test[0]))[0]
+        sysname = test[1].replace('</a', '')
+        sysmodulation = test[4].replace('</td', '')
+        sysstate = test[10].replace("</td", "")
+
+        if '25' not in sysmodulation:
+            count = count + 1
+        else:
+            if selection in sysstate:
+                #print({'SysID': sysid, 'Sysname': sysname, 'sysModulation': sysmodulation})
+                result.append(sysname)
+                count = count + 1
+            else:
+                count = count + 1
+
+    rrselectsystemDRPDWN = OptionMenu(rrimportFrame, rrimportselectsystemVar, *result)
+    rrselectsystemDRPDWN.grid(column=1, row=0, columnspan=5, sticky='EW', pady=5, padx=5)
+    rrimportselectsystemVar.set(result[0])
+
+rrimportselectsystemVar = StringVar(rrimportFrame)
+rrimportselectsystemVar.set('Select a System') # default value
+
+#rrstateentryTEXT = Label(rrimportFrame, text='State: ')
+#rrstateentryTEXT.grid(column=1, row=0, pady=5, padx=5)
+
+stateList = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DC", "DE", "FL", "GA",
+          "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
+          "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
+          "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
+          "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"]
+
+rrstateentryVar = StringVar(rrimportFrame)
+rrstateentryVar.set('Select a State')
+
+rrstateDRPDWN = OptionMenu(rrimportFrame, rrstateentryVar, *stateList, command=rrpopulateSystems)
+rrstateDRPDWN.grid(column=0, row=0, pady=5, padx=5, sticky='W')
+
+#rrselectsystemTEXT = Label(rrimportFrame, text='System: ')
+#rrselectsystemTEXT.grid(column=1, row=1, pady=5, padx=5)
+
+rrselectsystemDRPDWN = OptionMenu(rrimportFrame, rrimportselectsystemVar, [])
+rrselectsystemDRPDWN.grid(column=1, row=0, columnspan=5, sticky='NSEW', pady=5, padx=5)
+
+def rrimportFUNC():
+    selectedsystem = rrimportselectsystemVar.get()
+    selectedstate = rrstateentryVar.get()
+    import requests
+    from bs4 import BeautifulSoup
+    import re
+
+
+
+    # rrSearch = 'https://www.radioreference.com/apps/db/?action=regexp&regexp=' + input('State: ')
+    rrSearch = 'https://www.radioreference.com/apps/db/?action=regexp&regexp=' + selectedstate
+    r = requests.get(rrSearch)
+
+    soup = BeautifulSoup(r.text, features='lxml')
+    table = soup.find('table', {"class": "rrtable"})
+
+    items = re.findall("sid(.*)", str(table))
+
+    #print(items)
+
+    count = 0
+    result =[]
+
+    for i in items:
+        test = items[count].split('>')
+
+        sysid = re.findall("\d{1,10}", str(test[0]))[0]
+        sysname = test[1].replace('</a', '')
+        sysmodulation = test[4].replace('</td', '')
+        sysstate = test[10].replace("</td", "")
+
+        if '25' not in sysmodulation:
+            count = count + 1
+        else:
+            if selectedsystem in sysname:
+                config.read('config.ini')
+                rrUser = config.get('RadioReference', 'rruser')
+                rrPass = config.get('RadioReference', 'rrpass')
+                #print({'SysID': sysid, 'Sysname': sysname, 'sysModulation': sysmodulation})
+                sendCMD('radioreference', rrUser=rrUser, rrPass=rrPass, sysID=sysid, op25dir="/home/op25/op25/op25/gr-op25_repeater/apps/")
+                rrimportsystemBTN.configure(text='Please Wait....')
+                time.sleep(60)
+                rrimportsystemBTN.configure(text='Import System')
+                count = count + 1
+            else:
+                count = count + 1
+
+
+
+rrimportsystemBTN = Button(rrimportFrame, text='Import System', command=rrimportFUNC)
+rrimportsystemBTN.grid(column=3, row=2, sticky='EW', pady=5, padx=5)
+
+
+
+rrimportFrame.columnconfigure(0, weight=0)
+rrimportFrame.columnconfigure(1, weight=0)
+rrimportFrame.columnconfigure(2, weight=1)
+
+
 
 
 
@@ -1370,14 +1529,28 @@ scanmodeFrame.columnconfigure(0, weight=1)
 scanmodeFrame.columnconfigure(1, weight=1)
 
 ##You're adding logTAB.add(scanGridTAB4, text='ScanGrid', sticky='NESW') to the grid when scanlist mode is enabled.
-scanmodeScanlistTEXT = Button(scanmodebtnFrame, text='List Scan', command=lambda:[sendCMD('enableblacklistrange'), bottomStatusTEXT.configure(text='Enabling Scanlist Mode', bg='green'), restartop25FUNC(), logTAB.add(scanGridTAB4, text='ScanGrid', sticky='NESW')])
-scanmodeScanlistTEXT.grid(column=0, row=0)
+scanmodeScanlistTEXT = Button(scanmodebtnFrame, text='List Scan', command=lambda:[sysmsgUPDATE(text='Enabling List Scan Mode', bg='green'), sendCMD('enableblacklistrange'), restartop25FUNC(), logTAB.add(scanGridTAB4, text='ScanGrid', sticky='NESW')])
+scanmodeScanlistTEXT.grid(column=0, row=0, pady=3)
 
-scanmodeSiteTEXT = Button(scanmodebtnFrame, text='Site Scan', command=lambda:[sendCMD('disableblacklistrange'), bottomStatusTEXT.configure(text='Enabling Scanlist Mode', bg='green'), restartop25FUNC(), logTAB.hide(scanGridTAB4)])
+scanmodeSiteTEXT = Button(scanmodebtnFrame, text='Site Scan', command=lambda:[sendCMD('disableblacklistrange'), sysmsgUPDATE(text='Enabling Site Scan Mode', bg='green'), restartop25FUNC(), logTAB.hide(scanGridTAB4)])#, logTAB.hide(scanGridTAB4)
 scanmodeSiteTEXT.grid(column=1, row=0)
 
 
 ##END MENU FRAME
+
+def sysmsgUPDATE(text, bg):
+    text = text + '\t' + str(datetime.now().strftime('%I:%M:%S'))
+    sys_logTEXT.insert("1.0", text + '\n')
+    sys_logTEXT.tag_add('highlightline', '1.0', '2.0')
+    sys_logTEXT.tag_add('unhighlightline', '2.0', END)
+    sys_logTEXT.tag_configure('highlightline', background='lightgreen')
+    sys_logTEXT.tag_configure('unhighlightline', background='gray')
+    #if count > 30:
+    #   call_logTEXT.delete("30.0", END)
+    bottomStatusTEXT.configure(text=text, bg=bg)
+
+
+
 
 
 ##Color function to change display frame background and text color
@@ -1417,6 +1590,12 @@ def colorFUNC(color):
     #compassRangeTEXT.configure(fg=textcolor, bg=color)
     systemTEXT.configure(fg=textcolor, bg=color)
     #call_logTEXT.configure(fg=textcolor, bg=color)
+    row3alertTEXT.configure(fg=textcolor, bg=color)
+
+    compassRangeTEXT.configure(bg=color, fg=textcolor)
+    compassIMG.configure(bg=color)
+    alertTEXT.configure(bg=color, fg=textcolor)
+
 
     ##Buttons
     #holdBTN.configure(fg=textcolor, bg=color, activebackground=color)
@@ -1505,7 +1684,7 @@ def updateStatusText():
         statusTEXT.configure(text='SDR: ' + config.get(sdrSection, 'sdr') + "  LNA: " + config.get(sdrSection, 'lna') + "  SR: " + config.get(sdrSection, 'samplerate'))
 
 print('MODULE LOADED: op25mch_client.py')
-bottomStatusTEXT.configure(text='MODULE LOADED: op25mch_client.py', bg='green')
+sysmsgUPDATE(text='MODULE LOADED: op25mch_client.py', bg='green')
 
 if tagTEXT.cget('text') == "Connecting...":
     updateStatusText()
