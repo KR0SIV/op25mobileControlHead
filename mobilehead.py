@@ -123,7 +123,7 @@ def update():
                 if re.search('[a-zA-Z]', tag):
                     tag = tag.lstrip()
                 else:
-                    tag = ('TG ID: ' + tgid + ' [' + str(hex(int(tgid))) + ']')
+                    tag = ('TG ID: ' + tgid)
                     # tag = ('TG ID: ' + tgid)
                     # if 'None' in tgid:
                     #    tag = ('TG ID: ' + grpaddr)###May sometimes lose value before iteration
@@ -838,7 +838,7 @@ def closemenuFUNC():
 ##MENU BUTTON;column4 while systemstatusframe of displayframe is a columnspan of 4 keeping it outside the primary frame
 menuBTN = Button(rightalertFrame, text=" ≡ ", bg='lightgray', activebackground='gray', font=('Digital-7 Mono', 12),
                  command=openmenuFUNC)
-menuBTN.grid(row=0, column=5, sticky='E')
+menuBTN.grid(row=0, column=5, sticky='NE')
 ##MENU BUTTON
 
 rightalertFrame.columnconfigure(0, weight=1)
@@ -1469,6 +1469,7 @@ rrstateDRPDWN.grid(column=0, row=0, pady=5, padx=5, sticky='W')
 rrselectsystemDRPDWN = OptionMenu(rrimportFrame, rrimportselectsystemVar, [])
 rrselectsystemDRPDWN.grid(column=1, row=0, columnspan=5, sticky='NSEW', pady=5, padx=5)
 
+rrSectionErrorTEXT = Label(rrimportFrame, text='Failed! Check Account')
 
 def rrimportFUNC():
     selectedsystem = rrimportselectsystemVar.get()
@@ -1506,15 +1507,17 @@ def rrimportFUNC():
                 config.read('config.ini')
                 rrUser = config.get('RadioReference', 'rruser')
                 rrPass = config.get('RadioReference', 'rrpass')
-                # print({'SysID': sysid, 'Sysname': sysname, 'sysModulation': sysmodulation})
-                sendCMD('radioreference', rrUser=rrUser, rrPass=rrPass, sysID=sysid,
-                        op25dir="/home/op25/op25/op25/gr-op25_repeater/apps/")
-                rrimportsystemBTN.configure(text='Please Wait....')
-                time.sleep(60)
-                rrimportsystemBTN.configure(text='Import System')
+                print({'SysID': sysid, 'Sysname': sysname, 'sysModulation': sysmodulation})
+                #rrSectionErrorTEXT.configure(text='Allow Upto 60sec For Server to Import').grid(column=2, row=2, sticky='EW', pady=5, padx=5)
+
+                sendCMD('radioreference', rrUser=rrUser, rrPass=rrPass, sysID=sysid,op25dir="/home/op25/op25/op25/gr-op25_repeater/apps/")
+
+                #rrSectionErrorTEXT.grid_forget()
                 count = count + 1
             else:
                 count = count + 1
+
+
 
 
 rrimportsystemBTN = Button(rrimportFrame, text='Import System', command=rrimportFUNC)
