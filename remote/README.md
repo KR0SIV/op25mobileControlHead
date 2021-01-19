@@ -8,3 +8,4 @@ Binds to: '0.0.0.0' Binds Port: '10000'
 ## Client
 
 The client is contained within the mobile control head itself. 
+Currently the client is hard coded to port 10000 but will use the OP25 URI stored in the config.ini file.
