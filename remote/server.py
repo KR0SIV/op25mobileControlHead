@@ -1,6 +1,9 @@
 import socket
 import sys
+import os
 import ast
+
+op25OutputPath = os.getcwd() + '/'
 
 ####################START Radio Reference Import####################
 import csv
@@ -19,7 +22,8 @@ def generateTSV(rrUser, rrPass, rrsysid, op25dir):
     # parameters
     #op25OutputPath = os.getcwd() + "//"
     # op25OutputPath = '/home/pi/Downloads/op25/op25/gr-op25_repeater/apps/'
-    op25OutputPath = op25dir
+    #op25OutputPath = op25dir
+
 
     # radio reference authentication
     client = Client('http://api.radioreference.com/soap2/?wsdl&v=15&s=rpc')
@@ -63,11 +67,11 @@ def generateTSV(rrUser, rrPass, rrsysid, op25dir):
             pass
 
     try:
-        os.makedirs('SYSTEMS')
+        os.makedirs('systems')
     except:
         pass
     try:
-        os.makedirs('SYSTEMS/' + sysid[0].sysid)
+        os.makedirs('systems/' + sysid[0].sysid)
     except:
         pass
 
@@ -76,11 +80,11 @@ def generateTSV(rrUser, rrPass, rrsysid, op25dir):
         result = client_type(client.service.getTrsSites(rrSystemId, myAuthInfo))
 
         try:
-            os.makedirs('SYSTEMS/' + sysid)
+            os.makedirs('systems/' + sysid)
         except OSError as e:
             pass
 
-        with open(op25OutputPath + '/SYSTEMS/' + sysid + '/sitelocations.tsv', 'a+') as op25OutputFile:
+        with open(op25OutputPath + '/systems/' + sysid + '/sitelocations.tsv', 'a+') as op25OutputFile:
             op25OutputFile.write('rfss \t site \t lat \t lon \t range\t SiteDescription\n')
 
         count = 0
@@ -92,7 +96,7 @@ def generateTSV(rrUser, rrPass, rrsysid, op25dir):
                 lon = str(result[count].lon)
                 siterange = str(result[count].range)
                 sitedescr = str(result[count].siteDescr)
-                with open(op25OutputPath + '/SYSTEMS/' + sysid + '/sitelocations.tsv', 'a+') as op25OutputFile:
+                with open(op25OutputPath + '/systems/' + sysid + '/sitelocations.tsv', 'a+') as op25OutputFile:
                     op25OutputFile.write(rfss + '\t' + site + '\t' + lat + '\t' + lon + '\t' +siterange + '\t' + sitedescr + '\n')
                 count = count + 1
             except Exception as e:
@@ -106,7 +110,7 @@ def generateTSV(rrUser, rrPass, rrsysid, op25dir):
 
     def createtalkgroupList():
         try:
-            os.makedirs('SYSTEMS/' + sysid + '/TALKGROUPS')
+            os.makedirs('systems/' + sysid + '/talkgroups')
         except OSError as e:
             if e.errno != e.errno.EEXIST:
                 raise
@@ -119,7 +123,7 @@ def generateTSV(rrUser, rrPass, rrsysid, op25dir):
                 result = talkgroups[count]
                 tgid = str(result[0])
                 tgtag = str(result[1]).replace('OMMRC', '')
-                with open(op25OutputPath + 'SYSTEMS/' + sysid + '/TALKGROUPS/' + sysNameAbb + '_talkgroups.tsv', 'a+') as op25OutputFile:
+                with open(op25OutputPath + 'systems/' + sysid + '/talkgroups/' + sysNameAbb.lower() + '_talkgroups.tsv', 'a+') as op25OutputFile:
                     op25OutputFile.write(tgid + '\t' + tgtag + '\r\n')  # tgid -tab- talkgroup tag
                 count = count + 1
             except Exception as e:
@@ -135,7 +139,7 @@ def generateTSV(rrUser, rrPass, rrsysid, op25dir):
         result = client_type(client.service.getTrsSites(rrSystemId, myAuthInfo))
 
         try:
-            os.makedirs('SYSTEMS/' + sysid + '/SITES')
+            os.makedirs('systems/' + sysid + '/sites')
         except OSError as e:
             pass
 
@@ -171,14 +175,14 @@ def generateTSV(rrUser, rrPass, rrsysid, op25dir):
                 modulation = '"CQPSK"'
                 tagfile = '"' + op25OutputPath + sysid + '_talkgroups.tsv"'
                 whitelist = '""'
-                blacklist = '"' +op25dir + '/blacklist.tsv"'
+                blacklist = '"' +op25OutputPath + '/blacklist.tsv"'
                 centerfreq = '""'
 
                 rfss = str(result[count].rfss)
                 site = str(result[count].siteNumber)
 
 
-                with open(op25OutputPath + '/SYSTEMS/' + sysid + '/SITES/' + 'rfss'+rfss+'site'+site + '.tsv', 'a+') as op25OutputFile:
+                with open(op25OutputPath + '/systems/' + sysid + '/sites/' + 'rfss'+rfss+'site'+site + '.tsv', 'a+') as op25OutputFile:
                     op25OutputFile.write(
                         trunktsvHeader + systemC + '\t' + cclist + '\t' + offset + '\t' + nac + '\t' + modulation + '\t' + tagfile + '\t' + whitelist + '\t' + blacklist + '\t' + centerfreq)
 
@@ -199,21 +203,21 @@ def startop25(sdr='rtl', lna='49', samplerate='2000000', trunkfile='trunk.tsv', 
 
     #op25dir = "op25/op25/gr25-op_repeater/apps"
     screen = "screen -Sdm op25 ./rx.py --args '" + sdr + "' -N 'LNA:" + lna + "' -S " + samplerate + " -o 25000 -T " + trunkfile + " -U -V -2 -X -l http:0.0.0.0:8080"
-    os.popen('cd ' + op25dir + ' && ' + screen)
+    os.popen('cd ' + op25OutputPath + ' && ' + screen)
 
 def stopop25():
     import os
     os.popen('screen -X -S op25 quit')
 
-def blacklistRange(enabled=bool):
+def blacklistRange(enabled):
     try:
-        blacklistFile = open('blacklist.tsv', 'r+')
+        blacklistFile = open(op25OutputPath + 'blacklist.tsv', 'r+')
         blacklist = blacklistFile.read()
         print("Full Blacklist: " + blacklist)
     except:
-        blacklistFile = open('blacklist.tsv', 'w')
+        blacklistFile = open(op25OutputPath + 'blacklist.tsv', 'w')
         blacklistFile.write('#0\t65536')
-        blacklistFile = open('blacklist.tsv', 'r+')
+        blacklistFile = open(op25OutputPath + 'blacklist.tsv', 'r+')
         blacklist = blacklistFile.read()
         print("Full Blacklist: " + blacklist)
     if enabled == True: #True means you  want the range to exist, remove comment
@@ -221,7 +225,7 @@ def blacklistRange(enabled=bool):
         if "#0" in blacklist: #IF you don't see
             print('Block All Talkgroups by Default')
             modified = re.sub('^#0', '0', blacklist)
-            blacklistFile = open('blacklist.tsv', 'w')
+            blacklistFile = open(op25OutputPath + 'blacklist.tsv', 'w')
             blacklistFile.write(modified)
             blacklistFile.close()
         if "#0" not in blacklist:
@@ -235,7 +239,7 @@ def blacklistRange(enabled=bool):
         if "#0" not in blacklist: #if you see see "0" then append the #
             print('Block Only Talkgroups in blacklist')
             modified = re.sub('^0', '#0', blacklist)
-            blacklistFile = open('blacklist.tsv', 'w')
+            blacklistFile = open(op25OutputPath + 'blacklist.tsv', 'w')
             blacklistFile.write(modified)
             blacklistFile.close()
 
@@ -290,9 +294,9 @@ while True:
                 #print(dict['rrUser'])
                 if function == 'radioreference':
                     #print('Found Function: ' + function + ' Generating TSV Files')
-                    generateTSV(rrUser=dict['rrUser'], rrPass=dict['rrPass'], rrsysid=dict['sysID'], op25dir=dict['op25dir'])
+                    generateTSV(rrUser=dict['rrUser'], rrPass=dict['rrPass'], rrsysid=dict['sysID'], op25dir=op25OutputPath)
                 if function == 'startop25':
-                    startop25(sdr=dict['sdr'], lna=dict['lna'], samplerate=dict['samplerate'], trunkfile=dict['trunkfile'], op25dir=dict['op25dir'])
+                    startop25(sdr=dict['sdr'], lna=dict['lna'], samplerate=dict['samplerate'], trunkfile=dict['trunkfile'], op25dir=op25OutputPath)
                 if function == 'stopop25':
                     stopop25()
                 if function == 'enableblacklistrange':
@@ -304,7 +308,8 @@ while True:
             else:
                 #print('no data from', client_address)
                 break
-
+    except Exception as e:
+        print(e)
     finally:
         # Clean up the connection
         connection.close()
