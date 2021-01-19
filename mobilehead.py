@@ -12,6 +12,21 @@ import re
 from datetime import datetime
 import configparser, os
 
+
+
+def sysmsgUPDATE(text, bg):
+    text = text + '\t' + str(datetime.now().strftime('%I:%M:%S'))
+    sys_logTEXT.insert("1.0", text + '\n')
+    sys_logTEXT.tag_add('highlightline', '1.0', '2.0')
+    sys_logTEXT.tag_add('unhighlightline', '2.0', END)
+    sys_logTEXT.tag_configure('highlightline', background='lightgreen')
+    sys_logTEXT.tag_configure('unhighlightline', background='gray')
+    #if count > 30:
+    #   call_logTEXT.delete("30.0", END)
+    bottomStatusTEXT.configure(text=text, bg=bg)
+
+
+
 ##config bug, until restart when you add your config details the log will double
 
 config = configparser.ConfigParser()
@@ -93,6 +108,9 @@ def update():
                     tag = tag.lstrip()
                 else:
                     tag = ('Talkgroup ID: ' + tgid + ' [' + str(hex(int(tgid))) + ']')
+                    #tag = ('TG ID: ' + tgid)
+                    #if 'None' in tgid:
+                    #    tag = ('TG ID: ' + grpaddr)###May sometimes lose value before iteration
                 tagTEXT.configure(text=tag)
                 if grpaddr in alertsTSV:
                     if currentAlert != grpaddr:
@@ -229,20 +247,24 @@ def holdFUNC(input):
         holdBTN.configure(relief=RAISED, fg='black', text='HOLD')  ##IF any other background then black text
         #requests.post(op25uri, json=[{"command": "hold", "arg1": 0, "arg2": 0}])
         jsoncmd("hold", 0, 0)
+        sysmsgUPDATE(text='Releasing Talkgroup: ' + str(input), bg='green')
     else:
         if int(input) != 0:
 
             holdBTN.configure(relief=SUNKEN, fg='red', text=input)
             #requests.post(op25uri, json=[{"command": "hold", "arg1": int(input), "arg2": 0}])
             jsoncmd("hold", int(input), 0)
+            sysmsgUPDATE(text='Holding Talkgroup: ' + str(input), bg='green')
 
 def lockoutFUNC():
     #requests.post(op25uri, json=[{"command": "skip", "arg1": 0, "arg2": 0}])
     jsoncmd('lockout', 0, 0)
+    sysmsgUPDATE(text='Locking Out Talkgroup: ' + str(grpTEXT.cget('text')), bg='green')
 
 def skipFUNC():
     #requests.post(op25uri, json=[{"command": "skip", "arg1": 0, "arg2": 0}])
     jsoncmd('skip', 0, 0)
+    sysmsgUPDATE(text='Skipping Talkgroup: ' + str(grpTEXT.cget('text')), bg='green')
 
 def gotoFUNC():
     if gotoBTN.cget('relief') == SUNKEN:
@@ -274,7 +296,8 @@ main_window.geometry(screen_geometry)
 
 
 ##FRAME COLOR OPTIONS
-display_color = 'tan'
+#display_color = 'tan'
+display_color = 'black'
 
 
 
@@ -643,7 +666,7 @@ rightFrame.rowconfigure(1, weight=2, uniform='RightFrameRowGrouping')
 ##END StatusFrame Labels and Positions
 
 ##AlphaTag Frame Labels and Positions
-statusTEXT = Label(leftstatusFrame, text="System Placeholder", bg=display_color, font=('Digital-7 Mono', 10))
+statusTEXT = Label(leftstatusFrame, text="System Placeholder", bg=display_color, font=('Digital-7 Mono', 15))
 statusTEXT.grid(column=0, row=0, sticky='W')
 
 tagTEXT = Label(leftalphaFrame, text="Connecting...", bg=display_color, font=('Digital-7 Mono', 32), anchor=SW, justify=LEFT)
@@ -662,7 +685,7 @@ holdBTN.grid(column=0, row=0, sticky='nesw')
 gotoBTN = Button(leftbuttonFrame, text="GOTO", bg='lightgray', font=('Digital-7 Mono', 22), relief=RAISED, command=gotoFUNC)###CONTAINS PLACEHOLDER TEXT
 gotoBTN.grid(column=0, row=1, sticky='nesw')
 
-lockoutBTN = Button(leftbuttonFrame, text="L/O", bg='lightgray', font=('Digital-7 Mono', 22), command=lockoutFUNC)
+lockoutBTN = Button(leftbuttonFrame, text="LOCK", bg='lightgray', font=('Digital-7 Mono', 22), command=lockoutFUNC)
 lockoutBTN.grid(column=0, row=3, sticky='nesw')
 
 
@@ -695,6 +718,7 @@ def keypadentFUNC(input):
     keypadEntry.delete(0, 'end')
     #requests.post(op25uri, json=[{"command": "hold", "arg1": int(value), "arg2": 0}, {"command": "update", "arg1": 0, "arg2": 0}])
     jsoncmd('hold', int(value), 0)
+    sysmsgUPDATE(text='Going to and Holding Talkgroup: ' + str(input), bg='green')
     jsoncmd('update', 0, 0)
     holdBTN.configure(fg='red', relief=SUNKEN, text=input)
     gotoBTN.configure(relief=RAISED)
@@ -792,6 +816,7 @@ alertTEXT.grid(row=1, column=0, columnspan=4, sticky='NSEW')
 row3alertTEXT = Label(rightalertFrame, text='', bg=display_color, fg='grey', font=('Digital-7 Mono', 10))
 row3alertTEXT.grid(row=2, column=0, columnspan=4, sticky='NSEW')
 
+
 rightalertFrame.rowconfigure(0, weight=0, uniform='alerts')
 rightalertFrame.rowconfigure(1, weight=2, uniform='alerts')
 rightalertFrame.rowconfigure(2, weight=1, uniform='alerts')
@@ -803,7 +828,7 @@ def closemenuFUNC():
     menu_frame.grid_remove()
 
 ##MENU BUTTON;column4 while systemstatusframe of displayframe is a columnspan of 4 keeping it outside the primary frame
-menuBTN = Button(rightalertFrame, text=" ≡ ", bg=display_color, activebackground=display_color, font=('Digital-7 Mono', 12), command=openmenuFUNC)
+menuBTN = Button(rightalertFrame, text=" ≡ ", bg='lightgray', activebackground='gray', font=('Digital-7 Mono', 12), command=openmenuFUNC)
 menuBTN.grid(row=0, column=5, sticky='E')
 ##MENU BUTTON
 
@@ -890,6 +915,9 @@ themegTAB3.columnconfigure(2, weight=1)
 ##START Tab 4
 
 def gridtab1Func(buttontext, buttonrelief):
+#    gridDict = {}
+#    gridDict.update({'selection': scanlistVar.get(), 'relief': gridtabBTN1.cget('relief'), 'bg': gridtabBTN1.cget('bg')})
+#    print(gridDict)
     btnsplit = buttontext.split('\n')
     tgid = btnsplit[0]
     tgtag = btnsplit[1]
@@ -1098,34 +1126,75 @@ def gridtab16Func(buttontext, buttonrelief):
         gridtabBTN16.configure(relief=RAISED, bg='SystemButtonFace')
 
 
+##GET LIST OF SCANLIST FILES
+from os import walk
+
+scangridfiles = []
+for (dirpath, dirnames, filenames) in walk('scan/'):
+    scangridfiles.extend(filenames)
+    break
+#print(f)
+##END GET LIST OF SCANLIST FILES
+
+def loadscangridFUNC(selection):
+    setscangridFUNC(selection)
+    gridtabBTN1.configure(relief=RAISED, bg='SystemButtonFace')
+    gridtabBTN2.configure(relief=RAISED, bg='SystemButtonFace')
+    gridtabBTN3.configure(relief=RAISED, bg='SystemButtonFace')
+    gridtabBTN4.configure(relief=RAISED, bg='SystemButtonFace')
+    gridtabBTN5.configure(relief=RAISED, bg='SystemButtonFace')
+    gridtabBTN6.configure(relief=RAISED, bg='SystemButtonFace')
+    gridtabBTN7.configure(relief=RAISED, bg='SystemButtonFace')
+    gridtabBTN8.configure(relief=RAISED, bg='SystemButtonFace')
+    gridtabBTN9.configure(relief=RAISED, bg='SystemButtonFace')
+    gridtabBTN10.configure(relief=RAISED, bg='SystemButtonFace')
+    gridtabBTN11.configure(relief=RAISED, bg='SystemButtonFace')
+    gridtabBTN12.configure(relief=RAISED, bg='SystemButtonFace')
+    gridtabBTN13.configure(relief=RAISED, bg='SystemButtonFace')
+    gridtabBTN14.configure(relief=RAISED, bg='SystemButtonFace')
+    gridtabBTN15.configure(relief=RAISED, bg='SystemButtonFace')
+    gridtabBTN16.configure(relief=RAISED, bg='SystemButtonFace')
+
+
+
+
+
+
+
+scanlistVar = StringVar()
+scanlistVar.set('scanlist.tsv')
+
+
+gridtabDRPDWN = OptionMenu(scanGridTAB4, scanlistVar, *scangridfiles, command=loadscangridFUNC)
+gridtabDRPDWN.grid(column=0, row=0, columnspan=4, sticky='NESW')
 
 
 ##Row 1 Start
 gridtabBTN1 = Button(scanGridTAB4, text='TG\rPlaceHolder', command=lambda: gridtab1Func(gridtabBTN1.cget('text'), gridtabBTN1.cget('relief')))
-gridtabBTN1.grid(column=0, row=0, sticky='NESW')
+gridtabBTN1.grid(column=0, row=1, sticky='NESW')
 
 gridtabBTN2 = Button(scanGridTAB4, text='TG\rPlaceHolder', command=lambda: gridtab2Func(gridtabBTN2.cget('text'), gridtabBTN2.cget('relief')))
-gridtabBTN2.grid(column=1, row=0, sticky='NESW')
+gridtabBTN2.grid(column=1, row=1, sticky='NESW')
 
 gridtabBTN3 = Button(scanGridTAB4, text='TG\rPlaceHolder', command=lambda: gridtab3Func(gridtabBTN3.cget('text'), gridtabBTN3.cget('relief')))
-gridtabBTN3.grid(column=2, row=0, sticky='NESW')
+gridtabBTN3.grid(column=2, row=1, sticky='NESW')
 
 gridtabBTN4 = Button(scanGridTAB4, text='TG\rPlaceHolder', command=lambda: gridtab4Func(gridtabBTN4.cget('text'), gridtabBTN4.cget('relief')))
-gridtabBTN4.grid(column=3, row=0, sticky='NESW')
+gridtabBTN4.grid(column=3, row=1, sticky='NESW')
 #Row 1 End
 
 #Row 2 Start
 gridtabBTN5 = Button(scanGridTAB4, text='TG\rPlaceHolder', command=lambda: gridtab5Func(gridtabBTN5.cget('text'), gridtabBTN5.cget('relief')))
-gridtabBTN5.grid(column=0, row=1, sticky='NESW')
+gridtabBTN5.grid(column=0, row=2, sticky='NESW')
 
 gridtabBTN6 = Button(scanGridTAB4, text='TG\rPlaceHolder', command=lambda: gridtab6Func(gridtabBTN6.cget('text'), gridtabBTN6.cget('relief')))
-gridtabBTN6.grid(column=1, row=1, sticky='NESW')
+gridtabBTN6.grid(column=1, row=2, sticky='NESW')
 
 gridtabBTN7 = Button(scanGridTAB4, text='TG\rPlaceHolder', command=lambda: gridtab7Func(gridtabBTN7.cget('text'), gridtabBTN7.cget('relief')))
-gridtabBTN7.grid(column=2, row=1, sticky='NESW')
+gridtabBTN7.grid(column=2, row=2, sticky='NESW')
 
 gridtabBTN8 = Button(scanGridTAB4, text='TG\rPlaceHolder', command=lambda: gridtab8Func(gridtabBTN8.cget('text'), gridtabBTN8.cget('relief')))
-gridtabBTN8.grid(column=3, row=1, sticky='NESW')
+gridtabBTN8.grid(column=3, row=2, sticky='NESW')
 #Row 2 End
 
 
@@ -1163,65 +1232,74 @@ scanGridTAB4.columnconfigure(1, weight=1, uniform='scangrid')
 scanGridTAB4.columnconfigure(2, weight=1, uniform='scangrid')
 scanGridTAB4.columnconfigure(3, weight=1, uniform='scangrid')
 
-scanGridTAB4.rowconfigure(0, weight=1)
-scanGridTAB4.rowconfigure(1, weight=1)
-scanGridTAB4.rowconfigure(2, weight=1)
-scanGridTAB4.rowconfigure(3, weight=1)
-scanGridTAB4.rowconfigure(4, weight=1)
+scanGridTAB4.rowconfigure(0, weight=1, uniform='scangridrow')
+scanGridTAB4.rowconfigure(1, weight=1, uniform='scangridrow')
+scanGridTAB4.rowconfigure(2, weight=1, uniform='scangridrow')
+scanGridTAB4.rowconfigure(3, weight=1, uniform='scangridrow')
+scanGridTAB4.rowconfigure(4, weight=1, uniform='scangridrow')
 ##END Tab 4
 
 
 
-scangridTSV = open("scangrid.tsv", "r")
-tsvrow = scangridTSV.read().split("\n")
+def setscangridFUNC(selection):#############################YOU NEED TO LOCKOUT EVERYTHING WHEN YOU SWITCH SCANLISTS
+    from os import walk
 
-tsvcount = 0
-#tsvcolumnTG = tsvcolumn.split("    ")[0]
-#tsvcolumnTAG = tsvcolumn.split("    ")[1]
-#print('TG: ' + tsvcolumnTG + ' TAG: ' + tsvcolumnTAG)
+    scangridfiles = []
+    for (dirpath, dirnames, filenames) in walk('scan/'):
+        scangridfiles.extend(filenames)
+        break
+    tsvfilecount = 0
 
-for i in tsvrow:
-    #print(tsvrow[tsvcount])
-    if tsvcount == 0:
-        gridtabBTN1.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
-    if tsvcount == 1:
-        gridtabBTN2.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
-    if tsvcount == 2:
-        gridtabBTN3.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
-    if tsvcount == 3:
-        gridtabBTN4.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
-    if tsvcount == 4:
-        gridtabBTN5.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
-    if tsvcount == 5:
-        gridtabBTN6.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
-    if tsvcount == 6:
-        gridtabBTN7.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
-    if tsvcount == 7:
-        gridtabBTN8.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
-    if tsvcount == 8:
-        gridtabBTN9.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
-    if tsvcount == 9:
-        gridtabBTN10.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
-    if tsvcount == 10:
-        gridtabBTN11.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
-    if tsvcount == 11:
-        gridtabBTN12.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
-    if tsvcount == 12:
-        gridtabBTN13.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
-    if tsvcount == 13:
-        gridtabBTN14.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
-    if tsvcount == 14:
-        gridtabBTN15.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
-    if tsvcount == 15:
-        gridtabBTN16.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
-
-    tsvcount = tsvcount + 1
-    #gridtabBTN1.configure(text=tsvcolumnTAG)
+    scangridTSV = open("scan/" + selection, "r")
+    tsvrow = scangridTSV.read().split("\n")
+    tsvcount = 0
+    #tsvcolumnTG = tsvcolumn.split("    ")[0]
+    #tsvcolumnTAG = tsvcolumn.split("    ")[1]
+    #print('TG: ' + tsvcolumnTG + ' TAG: ' + tsvcolumnTAG)
 
 
 
+    for i in tsvrow:
+        if tsvcount == 0:
+            gridtabBTN1.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+        if tsvcount == 1:
+            gridtabBTN2.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+        if tsvcount == 2:
+            gridtabBTN3.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+        if tsvcount == 3:
+            gridtabBTN4.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+        if tsvcount == 4:
+            gridtabBTN5.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+        if tsvcount == 5:
+            gridtabBTN6.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+        if tsvcount == 6:
+            gridtabBTN7.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+        if tsvcount == 7:
+            gridtabBTN8.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+        if tsvcount == 8:
+            gridtabBTN9.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+        if tsvcount == 9:
+            gridtabBTN10.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+        if tsvcount == 10:
+            gridtabBTN11.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+        if tsvcount == 11:
+            gridtabBTN12.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+        if tsvcount == 12:
+            gridtabBTN13.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+        if tsvcount == 13:
+            gridtabBTN14.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+        if tsvcount == 14:
+            gridtabBTN15.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+        if tsvcount == 15:
+            gridtabBTN16.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+
+        tsvcount = tsvcount + 1
+        #gridtabBTN1.configure(text=tsvcolumnTAG)
 
 
+
+
+setscangridFUNC(scangridfiles[0])
 ###
 ###MENU DEVELOPMENT OPEN ON START
 ###
@@ -1232,7 +1310,7 @@ for i in tsvrow:
 
 
 ##MENU FRAME
-closemenuBTN = Button(menu_frame, text=" ≡ ", bg=display_color, activebackground=display_color, font=('Digital-7 Mono', 12), command=closemenuFUNC)
+closemenuBTN = Button(menu_frame, text=" ≡ ", bg='lightgray', activebackground='gray', font=('Digital-7 Mono', 12), command=closemenuFUNC)
 closemenuBTN.grid(row=0, column=2, sticky='E')
 
 menu_frame.columnconfigure(0, weight=1)
@@ -1538,17 +1616,6 @@ scanmodeSiteTEXT.grid(column=1, row=0)
 
 ##END MENU FRAME
 
-def sysmsgUPDATE(text, bg):
-    text = text + '\t' + str(datetime.now().strftime('%I:%M:%S'))
-    sys_logTEXT.insert("1.0", text + '\n')
-    sys_logTEXT.tag_add('highlightline', '1.0', '2.0')
-    sys_logTEXT.tag_add('unhighlightline', '2.0', END)
-    sys_logTEXT.tag_configure('highlightline', background='lightgreen')
-    sys_logTEXT.tag_configure('unhighlightline', background='gray')
-    #if count > 30:
-    #   call_logTEXT.delete("30.0", END)
-    bottomStatusTEXT.configure(text=text, bg=bg)
-
 
 
 
@@ -1594,7 +1661,7 @@ def colorFUNC(color):
 
     compassRangeTEXT.configure(bg=color, fg=textcolor)
     compassIMG.configure(bg=color)
-    alertTEXT.configure(bg=color, fg=textcolor)
+    #alertTEXT.configure(bg=color, fg=textcolor)
 
 
     ##Buttons
