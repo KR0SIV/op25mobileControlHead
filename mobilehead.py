@@ -814,7 +814,7 @@ leftsiteFrame.columnconfigure(3, weight=1)
 encTEXT = Label(rightalertFrame, text="ENCRYPTED CHANNEL Ø", bg=display_color, fg='grey', font=('Digital-7 Mono', 10))
 encTEXT.grid(column=0, row=0, columnspan=4, sticky='NSEW')
 
-alertTEXT = Label(rightalertFrame, text='TSV Loaded', bg=display_color, font=('Digital-7 Mono', 45))
+alertTEXT = Label(rightalertFrame, text='TSV Loaded', bg=display_color, fg='gray', font=('Digital-7 Mono', 45))
 alertTEXT.grid(row=1, column=0, columnspan=4, sticky='NSEW')
 
 row3alertTEXT = Label(rightalertFrame, text='', bg=display_color, fg='grey', font=('Digital-7 Mono', 10))
@@ -1180,7 +1180,7 @@ def loadscangridFUNC(selection):
 
 
 scanlistVar = StringVar()
-scanlistVar.set('scanlist.tsv')
+scanlistVar.set('default.tsv')
 
 gridtabDRPDWN = OptionMenu(scanGridTAB4, scanlistVar, *scangridfiles, command=loadscangridFUNC)
 gridtabDRPDWN.grid(column=0, row=0, columnspan=4, sticky='NESW')
@@ -1292,37 +1292,37 @@ def setscangridFUNC(selection):  #############################YOU NEED TO LOCKOU
 
     for i in tsvrow:
         if tsvcount == 0:
-            gridtabBTN1.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+            gridtabBTN1.configure(text=tsvrow[tsvcount].replace('\t', '\n'))
         if tsvcount == 1:
-            gridtabBTN2.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+            gridtabBTN2.configure(text=tsvrow[tsvcount].replace('\t', '\n'))
         if tsvcount == 2:
-            gridtabBTN3.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+            gridtabBTN3.configure(text=tsvrow[tsvcount].replace('\t', '\n'))
         if tsvcount == 3:
-            gridtabBTN4.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+            gridtabBTN4.configure(text=tsvrow[tsvcount].replace('\t', '\n'))
         if tsvcount == 4:
-            gridtabBTN5.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+            gridtabBTN5.configure(text=tsvrow[tsvcount].replace('\t', '\n'))
         if tsvcount == 5:
-            gridtabBTN6.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+            gridtabBTN6.configure(text=tsvrow[tsvcount].replace('\t', '\n'))
         if tsvcount == 6:
-            gridtabBTN7.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+            gridtabBTN7.configure(text=tsvrow[tsvcount].replace('\t', '\n'))
         if tsvcount == 7:
-            gridtabBTN8.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+            gridtabBTN8.configure(text=tsvrow[tsvcount].replace('\t', '\n'))
         if tsvcount == 8:
-            gridtabBTN9.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+            gridtabBTN9.configure(text=tsvrow[tsvcount].replace('\t', '\n'))
         if tsvcount == 9:
-            gridtabBTN10.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+            gridtabBTN10.configure(text=tsvrow[tsvcount].replace('\t', '\n'))
         if tsvcount == 10:
-            gridtabBTN11.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+            gridtabBTN11.configure(text=tsvrow[tsvcount].replace('\t', '\n'))
         if tsvcount == 11:
-            gridtabBTN12.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+            gridtabBTN12.configure(text=tsvrow[tsvcount].replace('\t', '\n'))
         if tsvcount == 12:
-            gridtabBTN13.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+            gridtabBTN13.configure(text=tsvrow[tsvcount].replace('\t', '\n'))
         if tsvcount == 13:
-            gridtabBTN14.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+            gridtabBTN14.configure(text=tsvrow[tsvcount].replace('\t', '\n'))
         if tsvcount == 14:
-            gridtabBTN15.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+            gridtabBTN15.configure(text=tsvrow[tsvcount].replace('\t', '\n'))
         if tsvcount == 15:
-            gridtabBTN16.configure(text=tsvrow[tsvcount].replace('    ', '\n'))
+            gridtabBTN16.configure(text=tsvrow[tsvcount].replace('\t', '\n'))
 
         tsvcount = tsvcount + 1
         # gridtabBTN1.configure(text=tsvcolumnTAG)
@@ -1677,7 +1677,7 @@ def colorFUNC(color):
 
     compassRangeTEXT.configure(bg=color, fg=textcolor)
     compassIMG.configure(bg=color)
-    # alertTEXT.configure(bg=color, fg=textcolor)
+    alertTEXT.configure(bg=color)
 
     ##Buttons
     # holdBTN.configure(fg=textcolor, bg=color, activebackground=color)
