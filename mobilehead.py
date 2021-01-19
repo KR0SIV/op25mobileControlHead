@@ -1180,7 +1180,7 @@ def loadscangridFUNC(selection):
 
 
 scanlistVar = StringVar()
-scanlistVar.set('default.tsv')
+scanlistVar.set('Select a ScanGrid TSV File to Load')
 
 gridtabDRPDWN = OptionMenu(scanGridTAB4, scanlistVar, *scangridfiles, command=loadscangridFUNC)
 gridtabDRPDWN.grid(column=0, row=0, columnspan=4, sticky='NESW')
@@ -1328,7 +1328,7 @@ def setscangridFUNC(selection):  #############################YOU NEED TO LOCKOU
         # gridtabBTN1.configure(text=tsvcolumnTAG)
 
 
-setscangridFUNC(scangridfiles[0])
+#setscangridFUNC(scangridfiles[0])
 ###
 ###MENU DEVELOPMENT OPEN ON START
 ###
