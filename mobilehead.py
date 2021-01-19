@@ -123,7 +123,7 @@ def update():
                 if re.search('[a-zA-Z]', tag):
                     tag = tag.lstrip()
                 else:
-                    tag = ('Talkgroup ID: ' + tgid + ' [' + str(hex(int(tgid))) + ']')
+                    tag = ('TG ID: ' + tgid + ' [' + str(hex(int(tgid))) + ']')
                     # tag = ('TG ID: ' + tgid)
                     # if 'None' in tgid:
                     #    tag = ('TG ID: ' + grpaddr)###May sometimes lose value before iteration
@@ -150,8 +150,8 @@ def update():
                     encTEXT.configure(fg='grey')
                 else:
                     encTEXT.configure(fg='black')
-                    alertTEXT.configure(text=grpaddr, fg='red')
-                    sysmsgUPDATE(text='Encrypted Call Detected on GRP: ' + grpaddr, bg='yellow')
+                    alertTEXT.configure(text=grpaddr, fg='blue')
+                    sysmsgUPDATE(text='Encrypted Call Detected on GRP: ' + grpaddr, bg='gray')
                     # if encTEXT.cget(bg='black'):
                     #    encTEXT.configure(fg='white')
                 srcaddr = str(data[1]['srcaddr'])
@@ -470,7 +470,9 @@ leftFrame.columnconfigure(0, weight=1)
 # Row2;System Detail Frame
 leftsysFrame = Frame(leftFrame, bd=1, relief=SOLID)
 leftsysFrame.grid(column=0, row=2, sticky='NESW')
-Label(leftsysFrame, text='System Detail Frame').grid()
+#Label(leftsysFrame, text='System Detail Frame').grid()
+modeTEXT = Label(leftsysFrame, text='Mode: ', bg=display_color)
+modeTEXT.grid()
 leftFrame.columnconfigure(0, weight=1)
 
 leftFrame.rowconfigure(0, weight=1, uniform='LeftFrameRowGrouping')
@@ -1617,22 +1619,48 @@ scanmodebtnFrame.grid(column=1, row=0, sticky='NESW')
 scanmodeFrame.columnconfigure(0, weight=1)
 scanmodeFrame.columnconfigure(1, weight=1)
 
+def scanmodeConf(mode):
+    config.read('config.ini')
+    if config.has_section('ScanMode'):
+        confwriter('ScanMode', 'mode', mode)
+    else:
+        config.add_section('ScanMode')
+        confwriter('ScanMode', 'mode', mode)
+
+
+
 ##You're adding logTAB.add(scanGridTAB4, text='ScanGrid', sticky='NESW') to the grid when scanlist mode is enabled.
 scanmodeScanlistTEXT = Button(scanmodebtnFrame, text='List Scan',
                               command=lambda: [sysmsgUPDATE(text='Enabling List Scan Mode', bg='green'),
                                                sendCMD('enableblacklistrange'), restartop25FUNC(),
-                                               logTAB.add(scanGridTAB4, text='ScanGrid', sticky='NESW')])
+                                               logTAB.add(scanGridTAB4, text='ScanGrid', sticky='NESW'),
+                                               scanmodeConf('list'),
+                                               scanmodeButtonFUNC()])
 scanmodeScanlistTEXT.grid(column=0, row=0, pady=3)
 
 scanmodeSiteTEXT = Button(scanmodebtnFrame, text='Site Scan', command=lambda: [sendCMD('disableblacklistrange'),
                                                                                sysmsgUPDATE(
                                                                                    text='Enabling Site Scan Mode',
                                                                                    bg='green'), restartop25FUNC(),
-                                                                               logTAB.hide(
-                                                                                   scanGridTAB4)])  # , logTAB.hide(scanGridTAB4)
+                                                                               logTAB.hide(scanGridTAB4),scanmodeConf('site'),scanmodeButtonFUNC()])  # , logTAB.hide(scanGridTAB4)
 scanmodeSiteTEXT.grid(column=1, row=0)
 
+def scanmodeButtonFUNC():
+    config.read('config.ini')
+    if config.has_section('ScanMode'):
+        currentmode = config.get('ScanMode', 'mode')
+        modeTEXT.configure(text='Mode: ' + currentmode)
+        if currentmode == 'site':
+            scanmodeScanlistTEXT.configure(relief=RAISED)
+            scanmodeSiteTEXT.configure(relief=SUNKEN)
+        if currentmode == 'list':
+            scanmodeScanlistTEXT.configure(relief=SUNKEN)
+            scanmodeSiteTEXT.configure(relief=RAISED)
+            logTAB.add(scanGridTAB4, text='ScanGrid', sticky='NESW')
+        else:
+            pass
 
+scanmodeButtonFUNC()
 ##END MENU FRAME
 
 
@@ -1678,6 +1706,8 @@ def colorFUNC(color):
     compassRangeTEXT.configure(bg=color, fg=textcolor)
     compassIMG.configure(bg=color)
     alertTEXT.configure(bg=color)
+
+    modeTEXT.configure(bg=color, fg=textcolor)
 
     ##Buttons
     # holdBTN.configure(fg=textcolor, bg=color, activebackground=color)
