@@ -26,7 +26,11 @@ def sysmsgUPDATE(text, bg):
     #   call_logTEXT.delete("30.0", END)
     bottomStatusTEXT.configure(text=text, bg=bg)
 
+directories = ['scan', 'alerts']
 
+for dir in directories:
+    if not os.path.exists(dir):
+        os.makedirs(dir)
 ##config bug, until restart when you add your config details the log will double
 
 config = configparser.ConfigParser()
@@ -144,7 +148,7 @@ def update():
                 freq = str(data[0]['freq'])
                 # freqTEXT.configure(text='.'.join(freq[i:i + 3] for i in range(0, len(freq), 3)))
             except Exception as e:
-                print(e)
+                #print(e)
                 pass
             try:
                 # srcaddrTEXT.configure(text='SRC: ' + srcaddr)
@@ -912,15 +916,113 @@ themegTAB3.columnconfigure(0, weight=1)
 themegTAB3.columnconfigure(1, weight=1)
 themegTAB3.columnconfigure(2, weight=1)
 
+def scangridSaver():
+    selection = scanlistVar.get()
+
+    relief1 = gridtabBTN1.cget('relief')
+    bg1 = gridtabBTN1.cget('bg')
+
+    relief2 = gridtabBTN2.cget('relief')
+    bg2 = gridtabBTN2.cget('bg')
+
+    relief3 = gridtabBTN3.cget('relief')
+    bg3 = gridtabBTN3.cget('bg')
+
+    relief4 = gridtabBTN4.cget('relief')
+    bg4 = gridtabBTN4.cget('bg')
+
+    relief5 = gridtabBTN5.cget('relief')
+    bg5 = gridtabBTN5.cget('bg')
+
+    relief6 = gridtabBTN6.cget('relief')
+    bg6 = gridtabBTN6.cget('bg')
+
+    relief7 = gridtabBTN7.cget('relief')
+    bg7 = gridtabBTN7.cget('bg')
+
+    relief8 = gridtabBTN8.cget('relief')
+    bg8 = gridtabBTN8.cget('bg')
+
+    relief9 = gridtabBTN9.cget('relief')
+    bg9 = gridtabBTN9.cget('bg')
+
+    relief10 = gridtabBTN10.cget('relief')
+    bg10 = gridtabBTN10.cget('bg')
+
+    relief11 = gridtabBTN11.cget('relief')
+    bg11 = gridtabBTN11.cget('bg')
+
+    relief12 = gridtabBTN12.cget('relief')
+    bg12 = gridtabBTN12.cget('bg')
+
+    relief13 = gridtabBTN13.cget('relief')
+    bg13 = gridtabBTN13.cget('bg')
+
+    relief14 = gridtabBTN14.cget('relief')
+    bg14 = gridtabBTN14.cget('bg')
+
+    relief15 = gridtabBTN15.cget('relief')
+    bg15 = gridtabBTN15.cget('bg')
+
+    relief16 = gridtabBTN16.cget('relief')
+    bg16 = gridtabBTN16.cget('bg')
+
+    ##Grid Dict only needs to store selection, button and that buttons relief. Color can be determined based on relief state!!
+    gridDict = {'selection': selection, 'btn1':relief1, 'btn2':relief2, 'btn3':relief3, 'btn4':relief4, 'btn5':relief5,
+                'btn6':relief6, 'btn7':relief7, 'btn8':relief8, 'btn9':relief9, 'btn10':relief10, 'btn11':relief11,
+                'btn12':relief12, 'btn13':relief13, 'btn14':relief14, 'btn15':relief15, 'btn16':relief16}
+
+    #print(gridDict)
+    filename = 'temp_scangridstate.db'
+    try:
+        scangridstateFile = open(filename, 'r')
+    except:
+        scangridstateFile = open(filename, 'w')
+        scangridstateFile.write('#This file stores the current state of each scangrid.\n')
+        #scangridstateFile = open(filename, 'r')
+    scangridstateFile.close()
+
+    #scangridstateFile = scangridstateFile.read()
+
+    import fileinput
+    for line in fileinput.input(filename, inplace=True):
+        if selection in line:
+            print('Found selection in file ' + line)
+            line = str(gridDict)
+            sys.stdout.write(line)
+            print('Updated selection to ' + line)
+        else:
+            print('Could not find ' + selection + ' in file, adding...')
+            scangridstateFile = open(filename, 'a+')
+            scangridstateFile.write(str(gridDict) + '\n')
+'''
+    if selection in scangridstateFile:
+        print('Found ' + selection + ' in file updating...')
+        gridsplit = scangridstateFile.split('\n')
+        #print(gridsplit[1])#Start your iteration at #1 to skip the 'help' text in your db file
+        splitcounter = 0
+        for i in gridsplit:
+            print(str(splitcounter) + i)
+            if selection in i:
+                print('Original in File' + i)
+                i.replace(i[splitcounter], str(gridDict))
+                print('Replaced in File' + i[splitcounter])
+
+            else:
+                pass
+
+            splitcounter = splitcounter + 1
+    else:
+        print('Could not find ' + selection + ' in file, adding...')
+        scangridstateFile = open(filename, 'a+')
+        scangridstateFile.write(str(gridDict) + '\n')
+'''
 
 ##END Tab 3
 
 ##START Tab 4
 
 def gridtab1Func(buttontext, buttonrelief):
-    #    gridDict = {}
-    #    gridDict.update({'selection': scanlistVar.get(), 'relief': gridtabBTN1.cget('relief'), 'bg': gridtabBTN1.cget('bg')})
-    #    print(gridDict)
     btnsplit = buttontext.split('\n')
     tgid = btnsplit[0]
     tgtag = btnsplit[1]
@@ -932,7 +1034,7 @@ def gridtab1Func(buttontext, buttonrelief):
         jsoncmd('lockout', int(tgid), 0)
         sysmsgUPDATE(text='Locking out Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN1.configure(relief=RAISED, bg='SystemButtonFace')
-
+    scangridSaver()
 
 def gridtab2Func(buttontext, buttonrelief):
     btnsplit = buttontext.split('\n')
@@ -946,7 +1048,7 @@ def gridtab2Func(buttontext, buttonrelief):
         jsoncmd('lockout', int(tgid), 0)
         sysmsgUPDATE(text='Locking out Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN2.configure(relief=RAISED, bg='SystemButtonFace')
-
+    scangridSaver()
 
 def gridtab3Func(buttontext, buttonrelief):
     btnsplit = buttontext.split('\n')
@@ -960,7 +1062,7 @@ def gridtab3Func(buttontext, buttonrelief):
         jsoncmd('lockout', int(tgid), 0)
         sysmsgUPDATE(text='Locking out Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN3.configure(relief=RAISED, bg='SystemButtonFace')
-
+    scangridSaver()
 
 def gridtab4Func(buttontext, buttonrelief):
     btnsplit = buttontext.split('\n')
@@ -974,7 +1076,7 @@ def gridtab4Func(buttontext, buttonrelief):
         jsoncmd('lockout', int(tgid), 0)
         sysmsgUPDATE(text='Locking out Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN4.configure(relief=RAISED, bg='SystemButtonFace')
-
+    scangridSaver()
 
 def gridtab5Func(buttontext, buttonrelief):
     btnsplit = buttontext.split('\n')
@@ -988,7 +1090,7 @@ def gridtab5Func(buttontext, buttonrelief):
         jsoncmd('lockout', int(tgid), 0)
         sysmsgUPDATE(text='Locking out Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN5.configure(relief=RAISED, bg='SystemButtonFace')
-
+    scangridSaver()
 
 def gridtab6Func(buttontext, buttonrelief):
     btnsplit = buttontext.split('\n')
@@ -1002,7 +1104,7 @@ def gridtab6Func(buttontext, buttonrelief):
         jsoncmd('lockout', int(tgid), 0)
         sysmsgUPDATE(text='Locking out Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN6.configure(relief=RAISED, bg='SystemButtonFace')
-
+    scangridSaver()
 
 def gridtab7Func(buttontext, buttonrelief):
     btnsplit = buttontext.split('\n')
@@ -1016,7 +1118,7 @@ def gridtab7Func(buttontext, buttonrelief):
         jsoncmd('lockout', int(tgid), 0)
         sysmsgUPDATE(text='Locking out Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN7.configure(relief=RAISED, bg='SystemButtonFace')
-
+    scangridSaver()
 
 def gridtab8Func(buttontext, buttonrelief):
     btnsplit = buttontext.split('\n')
@@ -1030,7 +1132,7 @@ def gridtab8Func(buttontext, buttonrelief):
         jsoncmd('lockout', int(tgid), 0)
         sysmsgUPDATE(text='Locking out Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN8.configure(relief=RAISED, bg='SystemButtonFace')
-
+    scangridSaver()
 
 def gridtab9Func(buttontext, buttonrelief):
     btnsplit = buttontext.split('\n')
@@ -1044,7 +1146,7 @@ def gridtab9Func(buttontext, buttonrelief):
         jsoncmd('lockout', int(tgid), 0)
         sysmsgUPDATE(text='Locking out Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN9.configure(relief=RAISED, bg='SystemButtonFace')
-
+    scangridSaver()
 
 def gridtab10Func(buttontext, buttonrelief):
     btnsplit = buttontext.split('\n')
@@ -1058,7 +1160,7 @@ def gridtab10Func(buttontext, buttonrelief):
         jsoncmd('lockout', int(tgid), 0)
         sysmsgUPDATE(text='Locking out Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN10.configure(relief=RAISED, bg='SystemButtonFace')
-
+    scangridSaver()
 
 def gridtab11Func(buttontext, buttonrelief):
     btnsplit = buttontext.split('\n')
@@ -1072,7 +1174,7 @@ def gridtab11Func(buttontext, buttonrelief):
         jsoncmd('lockout', int(tgid), 0)
         sysmsgUPDATE(text='Locking out Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN11.configure(relief=RAISED, bg='SystemButtonFace')
-
+    scangridSaver()
 
 def gridtab12Func(buttontext, buttonrelief):
     btnsplit = buttontext.split('\n')
@@ -1086,7 +1188,7 @@ def gridtab12Func(buttontext, buttonrelief):
         jsoncmd('lockout', int(tgid), 0)
         sysmsgUPDATE(text='Locking out Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN12.configure(relief=RAISED, bg='SystemButtonFace')
-
+    scangridSaver()
 
 def gridtab13Func(buttontext, buttonrelief):
     btnsplit = buttontext.split('\n')
@@ -1100,7 +1202,7 @@ def gridtab13Func(buttontext, buttonrelief):
         jsoncmd('lockout', int(tgid), 0)
         sysmsgUPDATE(text='Locking out Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN13.configure(relief=RAISED, bg='SystemButtonFace')
-
+    scangridSaver()
 
 def gridtab14Func(buttontext, buttonrelief):
     btnsplit = buttontext.split('\n')
@@ -1114,7 +1216,7 @@ def gridtab14Func(buttontext, buttonrelief):
         jsoncmd('lockout', int(tgid), 0)
         sysmsgUPDATE(text='Locking out Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN14.configure(relief=RAISED, bg='SystemButtonFace')
-
+    scangridSaver()
 
 def gridtab15Func(buttontext, buttonrelief):
     btnsplit = buttontext.split('\n')
@@ -1128,7 +1230,7 @@ def gridtab15Func(buttontext, buttonrelief):
         jsoncmd('lockout', int(tgid), 0)
         sysmsgUPDATE(text='Locking out Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN15.configure(relief=RAISED, bg='SystemButtonFace')
-
+    scangridSaver()
 
 def gridtab16Func(buttontext, buttonrelief):
     btnsplit = buttontext.split('\n')
@@ -1142,9 +1244,10 @@ def gridtab16Func(buttontext, buttonrelief):
         jsoncmd('lockout', int(tgid), 0)
         sysmsgUPDATE(text='Locking out Talkgroup: ' + str(tgid), bg='green')
         gridtabBTN16.configure(relief=RAISED, bg='SystemButtonFace')
-
+    scangridSaver()
 
 ##GET LIST OF SCANLIST FILES
+
 scangridfiles = []
 for (dirpath, dirnames, filenames) in walk('scan/'):
     scangridfiles.extend(filenames)
