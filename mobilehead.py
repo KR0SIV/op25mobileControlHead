@@ -933,13 +933,10 @@ def scangridDBwriter(argsection, argoption, argvalue):
         scangridDB.set(section=argsection, option=argoption, value=argvalue)
         write_scangridDB()
 
+if os.path.exists('scangrid.db'):
+    os.remove('scangrid.db')
 
-try:
-    scangridDB.read(dbfilename)
-    scangridDB.get('ScanGridState', 'fileDescription')
-except:
-    scangridDBwriter('ScanGridState', 'fileDescription',
-                     'This file stores the values of the scanGrid. It is rebuilt at run-time.')
+scangridDBwriter('ScanGridState', 'fileDescription', 'This file stores the values of the scanGrid. It is rebuilt at run-time.')
 
 
 def scangridSaver():
@@ -1316,22 +1313,136 @@ def loadscangridFUNC(selection):
     ##IF exists then configure, otherwise configure default
     #scangridDB.read(dbfilename)
     #scangridDB.get(selection, 'fileDescription')
-    gridtabBTN1.configure(relief=RAISED, bg='SystemButtonFace')
-    gridtabBTN2.configure(relief=RAISED, bg='SystemButtonFace')
-    gridtabBTN3.configure(relief=RAISED, bg='SystemButtonFace')
-    gridtabBTN4.configure(relief=RAISED, bg='SystemButtonFace')
-    gridtabBTN5.configure(relief=RAISED, bg='SystemButtonFace')
-    gridtabBTN6.configure(relief=RAISED, bg='SystemButtonFace')
-    gridtabBTN7.configure(relief=RAISED, bg='SystemButtonFace')
-    gridtabBTN8.configure(relief=RAISED, bg='SystemButtonFace')
-    gridtabBTN9.configure(relief=RAISED, bg='SystemButtonFace')
-    gridtabBTN10.configure(relief=RAISED, bg='SystemButtonFace')
-    gridtabBTN11.configure(relief=RAISED, bg='SystemButtonFace')
-    gridtabBTN12.configure(relief=RAISED, bg='SystemButtonFace')
-    gridtabBTN13.configure(relief=RAISED, bg='SystemButtonFace')
-    gridtabBTN14.configure(relief=RAISED, bg='SystemButtonFace')
-    gridtabBTN15.configure(relief=RAISED, bg='SystemButtonFace')
-    gridtabBTN16.configure(relief=RAISED, bg='SystemButtonFace')
+
+    if scangridDB.has_section(selection):
+        btn1 = scangridDB.get(selection, 'btn1')
+        if btn1 == 'sunken':
+            bg = 'gray'
+        else:
+            bg = 'SystemButtonFace'
+        gridtabBTN1.configure(relief=btn1, bg=bg)
+
+        btn2 = scangridDB.get(selection, 'btn2')
+        if btn2 == 'sunken':
+            bg = 'gray'
+        else:
+            bg = 'SystemButtonFace'
+        gridtabBTN2.configure(relief=btn2, bg=bg)
+
+        btn3 = scangridDB.get(selection, 'btn3')
+        if btn3 == 'sunken':
+            bg = 'gray'
+        else:
+            bg = 'SystemButtonFace'
+        gridtabBTN3.configure(relief=btn3, bg=bg)
+
+        btn4 = scangridDB.get(selection, 'btn4')
+        if btn4 == 'sunken':
+            bg = 'gray'
+        else:
+            bg = 'SystemButtonFace'
+        gridtabBTN4.configure(relief=btn4, bg=bg)
+
+        btn5 = scangridDB.get(selection, 'btn5')
+        if btn5 == 'sunken':
+            bg = 'gray'
+        else:
+            bg = 'SystemButtonFace'
+        gridtabBTN5.configure(relief=btn5, bg=bg)
+
+        btn6 = scangridDB.get(selection, 'btn6')
+        if btn6 == 'sunken':
+            bg = 'gray'
+        else:
+            bg = 'SystemButtonFace'
+        gridtabBTN6.configure(relief=btn6, bg=bg)
+
+        btn7 = scangridDB.get(selection, 'btn7')
+        if btn7 == 'sunken':
+            bg = 'gray'
+        else:
+            bg = 'SystemButtonFace'
+        gridtabBTN7.configure(relief=btn7, bg=bg)
+
+        btn8 = scangridDB.get(selection, 'btn8')
+        if btn8 == 'sunken':
+            bg = 'gray'
+        else:
+            bg = 'SystemButtonFace'
+        gridtabBTN8.configure(relief=btn8, bg=bg)
+
+        btn9 = scangridDB.get(selection, 'btn9')
+        if btn9 == 'sunken':
+            bg = 'gray'
+        else:
+            bg = 'SystemButtonFace'
+        gridtabBTN9.configure(relief=btn9, bg=bg)
+
+        btn10 = scangridDB.get(selection, 'btn10')
+        if btn10 == 'sunken':
+            bg = 'gray'
+        else:
+            bg = 'SystemButtonFace'
+        gridtabBTN10.configure(relief=btn10, bg=bg)
+
+        btn11 = scangridDB.get(selection, 'btn11')
+        if btn11 == 'sunken':
+            bg = 'gray'
+        else:
+            bg = 'SystemButtonFace'
+        gridtabBTN11.configure(relief=btn11, bg=bg)
+
+        btn12 = scangridDB.get(selection, 'btn12')
+        if btn12 == 'sunken':
+            bg = 'gray'
+        else:
+            bg = 'SystemButtonFace'
+        gridtabBTN12.configure(relief=btn12, bg=bg)
+
+        btn13 = scangridDB.get(selection, 'btn13')
+        if btn13 == 'sunken':
+            bg = 'gray'
+        else:
+            bg = 'SystemButtonFace'
+        gridtabBTN13.configure(relief=btn13, bg=bg)
+
+        btn14 = scangridDB.get(selection, 'btn14')
+        if btn14 == 'sunken':
+            bg = 'gray'
+        else:
+            bg = 'SystemButtonFace'
+        gridtabBTN14.configure(relief=btn14, bg=bg)
+
+        btn15 = scangridDB.get(selection, 'btn15')
+        if btn15 == 'sunken':
+            bg = 'gray'
+        else:
+            bg = 'SystemButtonFace'
+        gridtabBTN15.configure(relief=btn15, bg=bg)
+
+        btn16 = scangridDB.get(selection, 'btn16')
+        if btn16 == 'sunken':
+            bg = 'gray'
+        else:
+            bg = 'SystemButtonFace'
+        gridtabBTN16.configure(relief=btn16, bg=bg)
+    if not scangridDB.has_section(selection):
+        gridtabBTN1.configure(relief=RAISED, bg='SystemButtonFace')
+        gridtabBTN2.configure(relief=RAISED, bg='SystemButtonFace')
+        gridtabBTN3.configure(relief=RAISED, bg='SystemButtonFace')
+        gridtabBTN4.configure(relief=RAISED, bg='SystemButtonFace')
+        gridtabBTN5.configure(relief=RAISED, bg='SystemButtonFace')
+        gridtabBTN6.configure(relief=RAISED, bg='SystemButtonFace')
+        gridtabBTN7.configure(relief=RAISED, bg='SystemButtonFace')
+        gridtabBTN8.configure(relief=RAISED, bg='SystemButtonFace')
+        gridtabBTN9.configure(relief=RAISED, bg='SystemButtonFace')
+        gridtabBTN10.configure(relief=RAISED, bg='SystemButtonFace')
+        gridtabBTN11.configure(relief=RAISED, bg='SystemButtonFace')
+        gridtabBTN12.configure(relief=RAISED, bg='SystemButtonFace')
+        gridtabBTN13.configure(relief=RAISED, bg='SystemButtonFace')
+        gridtabBTN14.configure(relief=RAISED, bg='SystemButtonFace')
+        gridtabBTN15.configure(relief=RAISED, bg='SystemButtonFace')
+        gridtabBTN16.configure(relief=RAISED, bg='SystemButtonFace')
 
 
 scanlistVar = StringVar()
