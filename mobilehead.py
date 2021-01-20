@@ -97,8 +97,8 @@ def update():
     count = 1
     current = ""
     currentAlert = ''
-    alertsTSV()
     print('Running Update')
+    alertfile = alertsTSV()
     while True:
         # time.sleep(0.5)
         try:
@@ -120,15 +120,19 @@ def update():
                 sysid = str('Sys ID: ' + hex(data[0]['sysid']))
                 # sysidTEXT.configure(text=sysid)
                 tag = str(data[0]['tag'])
+
                 if re.search('[a-zA-Z]', tag):
                     tag = tag.lstrip()
                 else:
-                    tag = ('TG ID: ' + tgid)
-                    # tag = ('TG ID: ' + tgid)
+                    #tag = ('TG ID: ' + tgid)
+                    tag = ('TGID: ' + tgid + ' [' + str(hex(int(tgid))) + ']')###int(tgid) causes an exception and prevents NONE from printing to the screen. I put this back so that doesn't happen but you need to not fix this by causing an exception!!!!!!!
                     # if 'None' in tgid:
-                    #    tag = ('TG ID: ' + grpaddr)###May sometimes lose value before iteration
+                    #    tag = ('TG ID: ' + grpaddr)
+
+
                 tagTEXT.configure(text=tag)
-                if grpaddr in alertsTSV:
+
+                if grpaddr in alertfile:
                     if currentAlert != grpaddr:
                         currentAlert = grpaddr
                         alertTEXT.configure(text=tag[:13], fg='red')
@@ -140,7 +144,7 @@ def update():
                 freq = str(data[0]['freq'])
                 # freqTEXT.configure(text='.'.join(freq[i:i + 3] for i in range(0, len(freq), 3)))
             except Exception as e:
-                # print(e)
+                print(e)
                 pass
             try:
                 # srcaddrTEXT.configure(text='SRC: ' + srcaddr)
@@ -1469,7 +1473,7 @@ rrstateDRPDWN.grid(column=0, row=0, pady=5, padx=5, sticky='W')
 rrselectsystemDRPDWN = OptionMenu(rrimportFrame, rrimportselectsystemVar, [])
 rrselectsystemDRPDWN.grid(column=1, row=0, columnspan=5, sticky='NSEW', pady=5, padx=5)
 
-rrSectionErrorTEXT = Label(rrimportFrame, text='Failed! Check Account')
+#rrSectionErrorTEXT = Label(rrimportFrame, text='Failed! Check Account')
 
 def rrimportFUNC():
     selectedsystem = rrimportselectsystemVar.get()
