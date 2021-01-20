@@ -48,7 +48,5 @@ Upon first start you'll be prompted for your OP25 URI.
 If you enter it incorrectly that's okay, after first run "config.ini" will be created in the directory you ran it in.
 You can edit the URI there directly.
 
-You _NEED_ to be sure you enable the OP25 Web interface on the _BOATBOD_ fork!
+If you do not run the remote script on the device hosting your OP25 instance you'll _NEED_ to be sure you enable the OP25 Web interface on the _BOATBOD_ fork!
 ''' -l http:0.0.0.0:8080'''
-
-Eventually this is all going to be automated.
