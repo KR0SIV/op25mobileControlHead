@@ -916,6 +916,32 @@ themegTAB3.columnconfigure(0, weight=1)
 themegTAB3.columnconfigure(1, weight=1)
 themegTAB3.columnconfigure(2, weight=1)
 
+dbfilename = 'scangrid.db'
+scangridDB = configparser.ConfigParser()
+
+
+def write_scangridDB():
+    scangridDB.write(open(dbfilename, 'w'))
+
+
+def scangridDBwriter(argsection, argoption, argvalue):
+    if argsection in scangridDB.sections():
+        scangridDB.set(section=argsection, option=argoption, value=argvalue)
+        write_scangridDB()
+    else:
+        scangridDB.add_section(argsection)
+        scangridDB.set(section=argsection, option=argoption, value=argvalue)
+        write_scangridDB()
+
+
+try:
+    scangridDB.read(dbfilename)
+    scangridDB.get('ScanGridState', 'fileDescription')
+except:
+    scangridDBwriter('ScanGridState', 'fileDescription',
+                     'This file stores the values of the scanGrid. It is rebuilt at run-time.')
+
+
 def scangridSaver():
     selection = scanlistVar.get()
 
@@ -967,35 +993,52 @@ def scangridSaver():
     relief16 = gridtabBTN16.cget('relief')
     bg16 = gridtabBTN16.cget('bg')
 
-    ##Grid Dict only needs to store selection, button and that buttons relief. Color can be determined based on relief state!!
-    gridDict = {'selection': selection, 'btn1':relief1, 'btn2':relief2, 'btn3':relief3, 'btn4':relief4, 'btn5':relief5,
-                'btn6':relief6, 'btn7':relief7, 'btn8':relief8, 'btn9':relief9, 'btn10':relief10, 'btn11':relief11,
-                'btn12':relief12, 'btn13':relief13, 'btn14':relief14, 'btn15':relief15, 'btn16':relief16}
 
-    #print(gridDict)
-    filename = 'temp_scangridstate.db'
-    try:
-        scangridstateFile = open(filename, 'r')
-    except:
-        scangridstateFile = open(filename, 'w')
-        scangridstateFile.write('#This file stores the current state of each scangrid.\n')
-        #scangridstateFile = open(filename, 'r')
-    scangridstateFile.close()
+    if not scangridDB.has_section(section=selection):
+        print(selection + ' was not found in the database, adding...')
+        scangridDB.add_section(selection)
+        scangridDBwriter(selection, 'btn1', relief1)
+        scangridDBwriter(selection, 'btn2', relief2)
+        scangridDBwriter(selection, 'btn3', relief3)
+        scangridDBwriter(selection, 'btn4', relief4)
+        scangridDBwriter(selection, 'btn5', relief5)
+        scangridDBwriter(selection, 'btn6', relief6)
+        scangridDBwriter(selection, 'btn7', relief7)
+        scangridDBwriter(selection, 'btn8', relief8)
+        scangridDBwriter(selection, 'btn9', relief9)
+        scangridDBwriter(selection, 'btn10', relief10)
+        scangridDBwriter(selection, 'btn11', relief11)
+        scangridDBwriter(selection, 'btn12', relief12)
+        scangridDBwriter(selection, 'btn13', relief13)
+        scangridDBwriter(selection, 'btn14', relief14)
+        scangridDBwriter(selection, 'btn15', relief15)
+        scangridDBwriter(selection, 'btn16', relief16)
+    if scangridDB.has_section(section=selection):
+        print(selection + ' found in database, updating...')
+        scangridDB.set(selection, 'btn1', relief1)
+        scangridDB.set(selection, 'btn2', relief2)
+        scangridDB.set(selection, 'btn3', relief3)
+        scangridDB.set(selection, 'btn4', relief4)
+        scangridDB.set(selection, 'btn5', relief5)
+        scangridDB.set(selection, 'btn6', relief6)
+        scangridDB.set(selection, 'btn7', relief7)
+        scangridDB.set(selection, 'btn8', relief8)
+        scangridDB.set(selection, 'btn9', relief9)
+        scangridDB.set(selection, 'btn10', relief10)
+        scangridDB.set(selection, 'btn11', relief11)
+        scangridDB.set(selection, 'btn12', relief12)
+        scangridDB.set(selection, 'btn13', relief13)
+        scangridDB.set(selection, 'btn14', relief14)
+        scangridDB.set(selection, 'btn15', relief15)
+        scangridDB.set(selection, 'btn16', relief16)
+        write_scangridDB()
 
-    #scangridstateFile = scangridstateFile.read()
 
-    import fileinput
-    for line in fileinput.input(filename, inplace=True):
-        if selection in line:
-            print('Found selection in file ' + line)
-            line = str(gridDict)
-            sys.stdout.write(line)
-            print('Updated selection to ' + line)
-        else:
-            print('Could not find ' + selection + ' in file, adding...')
-            scangridstateFile = open(filename, 'a+')
-            scangridstateFile.write(str(gridDict) + '\n')
-'''
+
+
+
+
+    '''  
     if selection in scangridstateFile:
         print('Found ' + selection + ' in file updating...')
         gridsplit = scangridstateFile.split('\n')
@@ -1270,6 +1313,9 @@ if scangridfiles == []:
 
 def loadscangridFUNC(selection):
     setscangridFUNC(selection)
+    ##IF exists then configure, otherwise configure default
+    #scangridDB.read(dbfilename)
+    #scangridDB.get(selection, 'fileDescription')
     gridtabBTN1.configure(relief=RAISED, bg='SystemButtonFace')
     gridtabBTN2.configure(relief=RAISED, bg='SystemButtonFace')
     gridtabBTN3.configure(relief=RAISED, bg='SystemButtonFace')
