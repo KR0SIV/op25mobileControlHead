@@ -687,7 +687,7 @@ logTAB.add(syslogTAB2, text='Sys Log', sticky='NESW')
 
 # Tab3
 themegTAB3 = Frame(logTAB, bg='lightgray')
-logTAB.add(themegTAB3, text='Theme', sticky='NESW')
+#logTAB.add(themegTAB3, text='Theme', sticky='NESW')
 
 logTAB.grid(column=0, row=0, sticky='NESW')
 
@@ -931,35 +931,14 @@ syslogsyslogTAB2Label.grid(column=1, row=0, padx=10, pady=10, sticky='NESW')
 sys_logTEXT = Text(syslogTAB2, bg='gray', relief=SOLID)
 sys_logTEXT.grid(column=0, row=0, padx=2, pady=2, sticky='NESW')
 
-def updateDisplay_color(color):
-    config.set('Pi25MCH', 'display_color', color)
-    write_file()
 
-##Tab3 Color Picker
-tanBTN = Button(themegTAB3, text='TAN', bg='tan', command=lambda: [colorFUNC('tan'), updateDisplay_color('tan')])
-tanBTN.grid(column=0, row=0, sticky='NESW')
 
-blackBTN = Button(themegTAB3, text='BLK', bg='black', fg='white', command=lambda: [colorFUNC('black'), updateDisplay_color('black')])
-blackBTN.grid(column=1, row=0, sticky='NESW')
+#themegTAB3.rowconfigure(0, weight=1)
+#themegTAB3.rowconfigure(1, weight=1)
 
-greenBTN = Button(themegTAB3, text='GRN', bg='green', command=lambda: [colorFUNC('green'), updateDisplay_color('green')])
-greenBTN.grid(column=2, row=0, sticky='NESW')
-
-orangeBTN = Button(themegTAB3, text='ORG', bg='orange', command=lambda: [colorFUNC('orange'), updateDisplay_color('orange')])
-orangeBTN.grid(column=0, row=1, sticky='NESW')
-
-yellowBTN = Button(themegTAB3, text='YEL', bg='yellow', command=lambda: [colorFUNC('yellow'), updateDisplay_color('yellow')])
-yellowBTN.grid(column=1, row=1, sticky='NESW')
-
-pinkBTN = Button(themegTAB3, text='PNK', bg='pink', command=lambda: [colorFUNC('pink'), updateDisplay_color('pink')])
-pinkBTN.grid(column=2, row=1, sticky='NESW')
-
-themegTAB3.rowconfigure(0, weight=1)
-themegTAB3.rowconfigure(1, weight=1)
-
-themegTAB3.columnconfigure(0, weight=1)
-themegTAB3.columnconfigure(1, weight=1)
-themegTAB3.columnconfigure(2, weight=1)
+#themegTAB3.columnconfigure(0, weight=1)
+#themegTAB3.columnconfigure(1, weight=1)
+#themegTAB3.columnconfigure(2, weight=1)
 
 dbfilename = 'scangrid.db'
 scangridDB = configparser.ConfigParser()
@@ -1714,8 +1693,41 @@ rrimportFrame.grid(column=1, row=1, sticky='NSEW', padx=25)
 Pi25SettingsTEXT = Label(menu_frame, text='Pi25 Mobile Control Head Settings')
 Pi25SettingsTEXT.grid(column=1, row=2, padx=0, pady=0, sticky='NW')
 
+pi25settingsthemeOverlay = Frame(menu_frame, bd=3, relief=GROOVE)
+
 pi25settingsFrame = Frame(menu_frame, bd=3, relief=GROOVE)
 pi25settingsFrame.grid(column=1, row=3, rowspan=3, columns=4, rows=3,  padx=25, sticky='NESW')
+
+def updateDisplay_color(color):
+    config.set('Pi25MCH', 'display_color', color)
+    write_file()
+    sysmsgUPDATE('Setting Theme: ' + str(color.upper()), bg='green')
+#[pi25settingsthemeOverlay.grid(column=1, row=3, rowspan=3, columns=4, rows=3,  padx=25, sticky='NESW'), pi25settingsFrame.grid_forget()]
+##Tab3 Color Picker
+tanBTN = Button(pi25settingsthemeOverlay, text='TAN', bg='tan', command=lambda: [colorFUNC('tan'), updateDisplay_color('tan'), pi25settingsFrame.grid(column=1, row=3, rowspan=3, columns=4, rows=3,  padx=25, sticky='NESW')])
+tanBTN.grid(column=0, row=0, sticky='NESW')
+
+blackBTN = Button(pi25settingsthemeOverlay, text='BLK', bg='black', fg='white', command=lambda: [colorFUNC('black'), updateDisplay_color('black'), pi25settingsFrame.grid(column=1, row=3, rowspan=3, columns=4, rows=3,  padx=25, sticky='NESW')])
+blackBTN.grid(column=1, row=0, sticky='NESW')
+
+greenBTN = Button(pi25settingsthemeOverlay, text='GRN', bg='green', command=lambda: [colorFUNC('green'), updateDisplay_color('green'), pi25settingsFrame.grid(column=1, row=3, rowspan=3, columns=4, rows=3,  padx=25, sticky='NESW')])
+greenBTN.grid(column=2, row=0, sticky='NESW')
+
+orangeBTN = Button(pi25settingsthemeOverlay, text='ORG', bg='orange', command=lambda: [colorFUNC('orange'), updateDisplay_color('orange'), pi25settingsFrame.grid(column=1, row=3, rowspan=3, columns=4, rows=3,  padx=25, sticky='NESW')])
+orangeBTN.grid(column=0, row=1, sticky='NESW')
+
+yellowBTN = Button(pi25settingsthemeOverlay, text='YEL', bg='yellow', command=lambda: [colorFUNC('yellow'), updateDisplay_color('yellow'), pi25settingsFrame.grid(column=1, row=3, rowspan=3, columns=4, rows=3,  padx=25, sticky='NESW')])
+yellowBTN.grid(column=1, row=1, sticky='NESW')
+
+pinkBTN = Button(pi25settingsthemeOverlay, text='PNK', bg='pink', command=lambda: [colorFUNC('pink'), updateDisplay_color('pink'), pi25settingsFrame.grid(column=1, row=3, rowspan=3, columns=4, rows=3,  padx=25, sticky='NESW')])
+pinkBTN.grid(column=2, row=1, sticky='NESW')
+
+pi25settingsthemeOverlay.rowconfigure(0, weight=1, uniform='pi25themeoverlay')
+pi25settingsthemeOverlay.rowconfigure(1, weight=1, uniform='pi25themeoverlay')
+
+pi25settingsthemeOverlay.columnconfigure(0, weight=1, uniform='pi25themeoverlay')
+pi25settingsthemeOverlay.columnconfigure(1, weight=1, uniform='pi25themeoverlay')
+pi25settingsthemeOverlay.columnconfigure(2, weight=1, uniform='pi25themeoverlay')
 
 
 
@@ -1743,7 +1755,7 @@ menugridBTN1.grid(column=0, row=0, sticky='NESW')
 menugridBTN2 = Button(pi25settingsFrame, text='Update OP25\rURI', command=lambda: nouriPrompt.grid(row=1, column=0))
 menugridBTN2.grid(column=0, row=1, sticky='NESW')
 
-menugridBTN3 = Button(pi25settingsFrame, text='Unpopulated\rButton')
+menugridBTN3 = Button(pi25settingsFrame, text='Select\rTheme', command=lambda: [pi25settingsthemeOverlay.grid(column=1, row=3, rowspan=3, columns=4, rows=3,  padx=25, sticky='NESW'), pi25settingsFrame.grid_forget()])
 menugridBTN3.grid(column=0, row=2, sticky='NESW')
 
 ###Column 1 and Rows 0-3
