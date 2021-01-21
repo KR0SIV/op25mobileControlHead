@@ -573,16 +573,26 @@ nouriPrompt = Frame(rootFrame, bd=5, relief=RAISED)
 # nouriPrompt.grid(row=1, column=0)
 
 
-nouriTEXT = Label(nouriPrompt, text='No OP25 URI Configured!', fg='red', justify=LEFT, font=("Courier", 25), bd=2,
+nouriTEXT = Label(nouriPrompt, text='OP25 Web Server', fg='black', justify=CENTER, font=("Courier", 25), bd=5,
                   relief=RAISED)
-nouriTEXT.grid(column=0, row=0)
+nouriTEXT.grid(column=0, row=0, columnspan=2)
 
 nouriENT = Entry(nouriPrompt)
-nouriENT.insert(0, 'http://ip_address_to_OP25:port')
-nouriENT.grid(column=0, row=1, sticky='WE')
+
+if not config.has_section('Pi25MCH'):
+    config.add_section('Pi25MCH')
+
+if not config.get('Pi25MCH', 'uri'):
+    nouriENT.insert(0, 'http://ip_address_to_OP25:port')
+else:
+    nouriENT.insert(0, config.get('Pi25MCH', 'uri'))
+nouriENT.grid(column=0, row=1, columnspan=2, sticky='WE')
 
 nouriBTN = Button(nouriPrompt, text='SAVE', command=nouriFUNC)
 nouriBTN.grid(column=0, row=2)
+
+nouriBTN = Button(nouriPrompt, text='CANCEL', command=lambda: nouriPrompt.grid_forget())
+nouriBTN.grid(column=1, row=2)
 
 ##Tabbed Window Start
 
@@ -1688,6 +1698,8 @@ Pi25SettingsTEXT.grid(column=1, row=2, padx=0, pady=0, sticky='NW')
 pi25settingsFrame = Frame(menu_frame, bd=3, relief=GROOVE)
 pi25settingsFrame.grid(column=1, row=3, rowspan=3, columns=4, rows=3,  padx=25, sticky='NESW')
 
+
+
 #        confwriter(sectionname, 'callLogging', 'False')
 ###Column 0 and Rows 0-2
 
@@ -1709,7 +1721,7 @@ def menugridBTN1FUNC():
 menugridBTN1 = Button(pi25settingsFrame, text='Save Call Log\rTo File', command=menugridBTN1FUNC)
 menugridBTN1.grid(column=0, row=0, sticky='NESW')
 
-menugridBTN2 = Button(pi25settingsFrame, text='Unpopulated\rButton')
+menugridBTN2 = Button(pi25settingsFrame, text='Update OP25\rURI', command=lambda: nouriPrompt.grid(row=1, column=0))
 menugridBTN2.grid(column=0, row=1, sticky='NESW')
 
 menugridBTN3 = Button(pi25settingsFrame, text='Unpopulated\rButton')
