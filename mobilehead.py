@@ -96,6 +96,21 @@ def formatchan(frequency):
     return '.'.join(frequency[i:i + 3] for i in range(0, len(frequency), 3))
 
 
+if not os.path.exists('logs/'):
+    os.mkdir('logs/')
+
+def call_logSaver(call):
+    state = config.get('Menu Button Grid', 'calllogging')
+    if "True" in state:
+        logFile = open('logs/callLog-adding-improvements-later.log', 'a')
+        logFile.write(call+"\r")
+        logFile.close()
+
+    else:
+        pass
+
+
+
 ##Update function, runs in a thread to keep checcking for new data from the OP25 web server.
 def update():
     count = 1
@@ -183,6 +198,7 @@ def update():
                             call_logTEXT.tag_configure('unhighlightline', background='gray')
                             # call_logTEXT.yview_pickplace("end")
                             # call_logTEXT.see("end")
+                            call_logSaver(call)
                             current = tag
                             count = count + 1
                             if count > 30:
@@ -800,7 +816,7 @@ rightkeypadFrame.rowconfigure(4, weight=1, uniform='keypadRow')
 
 ##RIght Site details Frame
 
-nacwacnTEXT = Label(rightdetailsFrame, text="", bg=display_color, font=('Digital-7 Mono', 20))
+nacwacnTEXT = Label(rightdetailsFrame, text=" "*20, bg=display_color, font=('Digital-7 Mono', 20))
 nacwacnTEXT.grid(column=0, row=0)
 
 # Label(rightdetailsFrame, text='Placeholder line 2', font=('Digital-7 Mono', 15), bg=display_color).grid(row=1, column=0, sticky='W')
@@ -1452,75 +1468,75 @@ gridtabDRPDWN = OptionMenu(scanGridTAB4, scanlistVar, *scangridfiles, command=lo
 gridtabDRPDWN.grid(column=0, row=0, columnspan=4, sticky='NESW')
 
 ##Row 1 Start
-gridtabBTN1 = Button(scanGridTAB4, text='TG\rPlaceHolder',
+gridtabBTN1 = Button(scanGridTAB4, text='GridScan TSV\rNot Loaded',
                      command=lambda: gridtab1Func(gridtabBTN1.cget('text'), gridtabBTN1.cget('relief')))
 gridtabBTN1.grid(column=0, row=1, sticky='NESW')
 
-gridtabBTN2 = Button(scanGridTAB4, text='TG\rPlaceHolder',
+gridtabBTN2 = Button(scanGridTAB4, text='GridScan TSV\rNot Loaded',
                      command=lambda: gridtab2Func(gridtabBTN2.cget('text'), gridtabBTN2.cget('relief')))
 gridtabBTN2.grid(column=1, row=1, sticky='NESW')
 
-gridtabBTN3 = Button(scanGridTAB4, text='TG\rPlaceHolder',
+gridtabBTN3 = Button(scanGridTAB4, text='GridScan TSV\rNot Loaded',
                      command=lambda: gridtab3Func(gridtabBTN3.cget('text'), gridtabBTN3.cget('relief')))
 gridtabBTN3.grid(column=2, row=1, sticky='NESW')
 
-gridtabBTN4 = Button(scanGridTAB4, text='TG\rPlaceHolder',
+gridtabBTN4 = Button(scanGridTAB4, text='GridScan TSV\rNot Loaded',
                      command=lambda: gridtab4Func(gridtabBTN4.cget('text'), gridtabBTN4.cget('relief')))
 gridtabBTN4.grid(column=3, row=1, sticky='NESW')
 # Row 1 End
 
 # Row 2 Start
-gridtabBTN5 = Button(scanGridTAB4, text='TG\rPlaceHolder',
+gridtabBTN5 = Button(scanGridTAB4, text='GridScan TSV\rNot Loaded',
                      command=lambda: gridtab5Func(gridtabBTN5.cget('text'), gridtabBTN5.cget('relief')))
 gridtabBTN5.grid(column=0, row=2, sticky='NESW')
 
-gridtabBTN6 = Button(scanGridTAB4, text='TG\rPlaceHolder',
+gridtabBTN6 = Button(scanGridTAB4, text='GridScan TSV\rNot Loaded',
                      command=lambda: gridtab6Func(gridtabBTN6.cget('text'), gridtabBTN6.cget('relief')))
 gridtabBTN6.grid(column=1, row=2, sticky='NESW')
 
-gridtabBTN7 = Button(scanGridTAB4, text='TG\rPlaceHolder',
+gridtabBTN7 = Button(scanGridTAB4, text='GridScan TSV\rNot Loaded',
                      command=lambda: gridtab7Func(gridtabBTN7.cget('text'), gridtabBTN7.cget('relief')))
 gridtabBTN7.grid(column=2, row=2, sticky='NESW')
 
-gridtabBTN8 = Button(scanGridTAB4, text='TG\rPlaceHolder',
+gridtabBTN8 = Button(scanGridTAB4, text='GridScan TSV\rNot Loaded',
                      command=lambda: gridtab8Func(gridtabBTN8.cget('text'), gridtabBTN8.cget('relief')))
 gridtabBTN8.grid(column=3, row=2, sticky='NESW')
 # Row 2 End
 
 
 # Row 3 Start
-gridtabBTN9 = Button(scanGridTAB4, text='TG\rPlaceHolder',
+gridtabBTN9 = Button(scanGridTAB4, text='GridScan TSV\rNot Loaded',
                      command=lambda: gridtab9Func(gridtabBTN9.cget('text'), gridtabBTN9.cget('relief')))
 gridtabBTN9.grid(column=0, row=3, sticky='NESW')
 
-gridtabBTN10 = Button(scanGridTAB4, text='TG\rPlaceHolder',
+gridtabBTN10 = Button(scanGridTAB4, text='GridScan TSV\rNot Loaded',
                       command=lambda: gridtab10Func(gridtabBTN10.cget('text'), gridtabBTN10.cget('relief')))
 gridtabBTN10.grid(column=1, row=3, sticky='NESW')
 
-gridtabBTN11 = Button(scanGridTAB4, text='TG\rPlaceHolder',
+gridtabBTN11 = Button(scanGridTAB4, text='GridScan TSV\rNot Loaded',
                       command=lambda: gridtab11Func(gridtabBTN11.cget('text'), gridtabBTN11.cget('relief')))
 gridtabBTN11.grid(column=2, row=3, sticky='NESW')
 
-gridtabBTN12 = Button(scanGridTAB4, text='TG\rPlaceHolder',
+gridtabBTN12 = Button(scanGridTAB4, text='GridScan TSV\rNot Loaded',
                       command=lambda: gridtab12Func(gridtabBTN12.cget('text'), gridtabBTN12.cget('relief')))
 gridtabBTN12.grid(column=3, row=3, sticky='NESW')
 # Row 3 End
 
 
 # Row 4 Start
-gridtabBTN13 = Button(scanGridTAB4, text='TG\rPlaceHolder',
+gridtabBTN13 = Button(scanGridTAB4, text='GridScan TSV\rNot Loaded',
                       command=lambda: gridtab13Func(gridtabBTN13.cget('text'), gridtabBTN13.cget('relief')))
 gridtabBTN13.grid(column=0, row=4, sticky='NESW')
 
-gridtabBTN14 = Button(scanGridTAB4, text='TG\rPlaceHolder',
+gridtabBTN14 = Button(scanGridTAB4, text='GridScan TSV\rNot Loaded',
                       command=lambda: gridtab14Func(gridtabBTN14.cget('text'), gridtabBTN14.cget('relief')))
 gridtabBTN14.grid(column=1, row=4, sticky='NESW')
 
-gridtabBTN15 = Button(scanGridTAB4, text='TG\rPlaceHolder',
+gridtabBTN15 = Button(scanGridTAB4, text='GridScan TSV\rNot Loaded',
                       command=lambda: gridtab15Func(gridtabBTN15.cget('text'), gridtabBTN15.cget('relief')))
 gridtabBTN15.grid(column=2, row=4, sticky='NESW')
 
-gridtabBTN16 = Button(scanGridTAB4, text='TG\rPlaceHolder',
+gridtabBTN16 = Button(scanGridTAB4, text='GridScan TSV\rNot Loaded',
                       command=lambda: gridtab16Func(gridtabBTN16.cget('text'), gridtabBTN16.cget('relief')))
 gridtabBTN16.grid(column=3, row=4, sticky='NESW')
 # Row 4 End
@@ -1666,6 +1682,91 @@ menu_frame.columnconfigure(0, weight=1)
 rrimportFrame = Frame(menu_frame, bd=3, relief=GROOVE)
 rrimportFrame.grid(column=1, row=1, sticky='NSEW', padx=25)
 
+Pi25SettingsTEXT = Label(menu_frame, text='Pi25 Mobile Control Head Settings')
+Pi25SettingsTEXT.grid(column=1, row=2, padx=0, pady=0, sticky='NW')
+
+pi25settingsFrame = Frame(menu_frame, bd=3, relief=GROOVE)
+pi25settingsFrame.grid(column=1, row=3, rowspan=3, columns=4, rows=3,  padx=25, sticky='NESW')
+
+#        confwriter(sectionname, 'callLogging', 'False')
+###Column 0 and Rows 0-2
+
+def menugridBTN1FUNC():
+    sectionname = 'Menu Button Grid'
+    if not config.has_section(sectionname):
+        config.add_section(sectionname)
+        #write_file(
+    if 'raised' in menugridBTN1.cget('relief'):
+        confwriter(sectionname, 'calllogging', 'True')
+        menugridBTN1.configure(relief=SUNKEN)
+        #write_file()
+    else:
+        confwriter(sectionname, 'calllogging', 'False')
+        menugridBTN1.configure(relief=RAISED)
+        #write_file()
+
+
+menugridBTN1 = Button(pi25settingsFrame, text='Save Call Log\rTo File', command=menugridBTN1FUNC)
+menugridBTN1.grid(column=0, row=0, sticky='NESW')
+
+menugridBTN2 = Button(pi25settingsFrame, text='Unpopulated\rButton')
+menugridBTN2.grid(column=0, row=1, sticky='NESW')
+
+menugridBTN3 = Button(pi25settingsFrame, text='Unpopulated\rButton')
+menugridBTN3.grid(column=0, row=2, sticky='NESW')
+
+###Column 1 and Rows 0-3
+
+menugridBTN4 = Button(pi25settingsFrame, text='Unpopulated\rButton')
+menugridBTN4.grid(column=1, row=0, sticky='NESW')
+
+menugridBTN5 = Button(pi25settingsFrame, text='Unpopulated\rButton')
+menugridBTN5.grid(column=1, row=1, sticky='NESW')
+
+menugridBTN6 = Button(pi25settingsFrame, text='Unpopulated\rButton')
+menugridBTN6.grid(column=1, row=2, sticky='NESW')
+
+###Column 2 and Rows 0-3
+
+
+menugridBTN7 = Button(pi25settingsFrame, text='Unpopulated\rButton')
+menugridBTN7.grid(column=2, row=0, sticky='NESW')
+
+menugridBTN8 = Button(pi25settingsFrame, text='Unpopulated\rButton')
+menugridBTN8.grid(column=2, row=1, sticky='NESW')
+
+menugridBTN9 = Button(pi25settingsFrame, text='Unpopulated\rButton')
+menugridBTN9.grid(column=2, row=2, sticky='NESW')
+
+###Column 3 and Rows 0-3
+
+menugridBTN10 = Button(pi25settingsFrame, text='Unpopulated\rButton')
+menugridBTN10.grid(column=3, row=0, sticky='NESW')
+
+menugridBTN11 = Button(pi25settingsFrame, text='Unpopulated\rButton')
+menugridBTN11.grid(column=3, row=1, sticky='NESW')
+
+menugridBTN12 = Button(pi25settingsFrame, text='Unpopulated\rButton')
+menugridBTN12.grid(column=3, row=2, sticky='NESW')
+
+pi25settingsFrame.rowconfigure(0, weight=1, uniform='pi25settingsgrid')
+pi25settingsFrame.rowconfigure(1, weight=1, uniform='pi25settingsgrid')
+pi25settingsFrame.rowconfigure(2, weight=1, uniform='pi25settingsgrid')
+
+pi25settingsFrame.columnconfigure(0, weight=1, uniform='pi25settingsgrid')
+pi25settingsFrame.columnconfigure(1, weight=1, uniform='pi25settingsgrid')
+pi25settingsFrame.columnconfigure(2, weight=1, uniform='pi25settingsgrid')
+pi25settingsFrame.columnconfigure(3, weight=1, uniform='pi25settingsgrid')
+
+
+#read button config and set buttons
+sectionname = 'Menu Button Grid'
+if not config.has_section(sectionname):
+    config.add_section(sectionname)
+    # write_file()
+if 'True' in config.get(sectionname, 'calllogging'):
+    menugridBTN1.configure(relief=SUNKEN)##Save Log to File
+
 
 def rrpopulateSystems(selection):
     import requests
@@ -1790,6 +1891,8 @@ rrimportsystemBTN.grid(column=3, row=2, sticky='EW', pady=5, padx=5)
 rrimportFrame.columnconfigure(0, weight=0)
 rrimportFrame.columnconfigure(1, weight=0)
 rrimportFrame.columnconfigure(2, weight=1)
+
+
 
 
 def sdrFUNC(selection):
