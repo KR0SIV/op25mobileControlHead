@@ -1763,6 +1763,7 @@ pi25settingsFrame.columnconfigure(3, weight=1, uniform='pi25settingsgrid')
 sectionname = 'Menu Button Grid'
 if not config.has_section(sectionname):
     config.add_section(sectionname)
+    confwriter(sectionname, 'calllogging', 'False')
     # write_file()
 if 'True' in config.get(sectionname, 'calllogging'):
     menugridBTN1.configure(relief=SUNKEN)##Save Log to File
