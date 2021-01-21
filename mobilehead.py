@@ -1880,6 +1880,63 @@ rrselectsystemDRPDWN.grid(column=1, row=0, columnspan=5, sticky='NSEW', pady=5, 
 
 #rrSectionErrorTEXT = Label(rrimportFrame, text='Failed! Check Account')
 
+def generateTSV(rrUser, rrPass, rrsysid):
+    from zeep import Client
+
+    rrSystemId = int(rrsysid)
+
+    # radio reference authentication
+    client = Client('http://api.radioreference.com/soap2/?wsdl&v=15&s=rpc')
+    auth_type = client.get_type('ns0:authInfo')
+    myAuthInfo = auth_type(username=rrUser, password=rrPass, appKey='28801163', version='15',
+                           style='rpc')
+
+    # prompt user for system ID
+
+    sysName = client.service.getTrsDetails(rrSystemId, myAuthInfo).sName
+    sysresult = client.service.getTrsDetails(rrSystemId, myAuthInfo).sysid
+    sysid = sysresult[0].sysid
+    print(sysName + ' system selected.')
+
+
+    try:
+        os.makedirs('systems')
+    except:
+        pass
+    try:
+        os.makedirs('systems/' + sysid[0].sysid)
+    except:
+        pass
+
+
+    client_type = client.get_type('ns0:TrsSites')
+    result = client_type(client.service.getTrsSites(rrSystemId, myAuthInfo))
+
+    try:
+        os.makedirs('systems/' + sysid)
+    except OSError as e:
+        pass
+
+    with open('systems/' + sysid + '/sitelocations.tsv', 'a+') as op25OutputFile:
+        op25OutputFile.write('rfss \t site \t lat \t lon \t range\t SiteDescription\n')
+
+    count = 0
+    for i in range(len(result)):
+        try:
+            rfss = str(result[count].rfss)
+            site = str(result[count].siteNumber)
+            lat = str(result[count].lat)
+            lon = str(result[count].lon)
+            siterange = str(result[count].range)
+            sitedescr = str(result[count].siteDescr)
+            with open('systems/' + sysid + '/sitelocations.tsv', 'a+') as op25OutputFile:
+                op25OutputFile.write(rfss + '\t' + site + '\t' + lat + '\t' + lon + '\t' +siterange + '\t' + sitedescr + '\n')
+            count = count + 1
+        except Exception as e:
+            print(e)
+            count = count + 1
+            pass
+
 def rrimportFUNC():
     selectedsystem = rrimportselectsystemVar.get()
     selectedstate = rrstateentryVar.get()
@@ -1916,10 +1973,12 @@ def rrimportFUNC():
                 config.read('config.ini')
                 rrUser = config.get('RadioReference', 'rruser')
                 rrPass = config.get('RadioReference', 'rrpass')
-                print({'SysID': sysid, 'Sysname': sysname, 'sysModulation': sysmodulation})
+                #print({'SysID': sysid, 'Sysname': sysname, 'sysModulation': sysmodulation})
+                sysmsgUPDATE('Importing System Data from Radio Reference for: ' + sysname, bg='green')
                 #rrSectionErrorTEXT.configure(text='Allow Upto 60sec For Server to Import').grid(column=2, row=2, sticky='EW', pady=5, padx=5)
 
                 sendCMD('radioreference', rrUser=rrUser, rrPass=rrPass, sysID=sysid,op25dir="/home/op25/op25/op25/gr-op25_repeater/apps/")
+                generateTSV(rrUser, rrPass, sysid)
 
                 #rrSectionErrorTEXT.grid_forget()
                 count = count + 1
