@@ -137,7 +137,7 @@ def update():
                 system = str(data[0]['system'])
                 systemTEXT.configure(text=system)
                 sysid = str('Sys ID: ' + hex(data[0]['sysid']))
-                # sysidTEXT.configure(text=sysid)
+                sysidTEXT.configure(text=sysid)
                 tag = str(data[0]['tag'])
 
                 if re.search('[a-zA-Z]', tag):
@@ -332,8 +332,14 @@ main_window.title('OP25 Control Head')
 main_window.geometry(screen_geometry)
 
 ##FRAME COLOR OPTIONS
-# display_color = 'tan'
-display_color = 'black'
+try:
+    config.get('Pi25MCH', 'display_color')
+except:
+    confwriter('Pi25MCH', 'display_color', 'black')
+    write_file()
+
+display_color = config.get('Pi25MCH', 'display_color')
+
 
 rootFrame = Frame(main_window)
 rootFrame.grid(column=0, row=0, rows=3, columns=2, sticky='NESW')
@@ -513,11 +519,11 @@ leftsiteFrame.grid(column=0, row=1, sticky='NESW')
 rightFrame.columnconfigure(0, weight=1)
 
 rightdetailsFrame = Frame(leftsiteFrame, bd=1, relief=SOLID)
-rightdetailsFrame.grid(column=0, row=0, rows=3, sticky='NESW')
+rightdetailsFrame.grid(column=0, row=0, rows=4, sticky='NESW')
 # Label(rightdetailsFrame, text='Right Site Details Frame').grid()
 
 righttxrxFrame = Frame(rightdetailsFrame)
-righttxrxFrame.grid(column=0, row=2, sticky='EW')
+righttxrxFrame.grid(column=0, row=3, sticky='EW')
 
 leftcompassFrame = Frame(leftsiteFrame, bd=1, relief=SOLID)
 leftcompassFrame.grid(column=1, row=0, sticky='NESW')
@@ -826,8 +832,17 @@ rightkeypadFrame.rowconfigure(4, weight=1, uniform='keypadRow')
 
 ##RIght Site details Frame
 
-nacwacnTEXT = Label(rightdetailsFrame, text=" "*20, bg=display_color, font=('Digital-7 Mono', 20))
+nacwacnTEXT = Label(rightdetailsFrame, text=" "*40, bg=display_color, font=('Digital-7 Mono', 20))
 nacwacnTEXT.grid(column=0, row=0)
+
+sysidTEXT = Label(rightdetailsFrame, text="", bg=display_color, font=('Digital-7 Mono', 20))
+sysidTEXT.grid(column=0, row=1, sticky='W')
+
+adjacent_dataTEXT = Label(rightdetailsFrame, text="", bg=display_color, font=('Digital-7 Mono', 22))
+#adjacent_dataTEXT.grid(column=0, row=2)
+
+frequenciesTEXT = Label(rightdetailsFrame, text="", bg=display_color, font=('Digital-7 Mono', 15))
+#frequenciesTEXT.grid(column=0, row=3)
 
 # Label(rightdetailsFrame, text='Placeholder line 2', font=('Digital-7 Mono', 15), bg=display_color).grid(row=1, column=0, sticky='W')
 
@@ -850,13 +865,13 @@ leftsiteFrame.columnconfigure(3, weight=1)
 encTEXT = Label(rightalertFrame, text="ENCRYPTED CHANNEL Ø", bg=display_color, fg='grey', font=('Digital-7 Mono', 10))
 encTEXT.grid(column=0, row=0, columnspan=4, sticky='NSEW')
 
-alertTEXT = Label(rightalertFrame, text='TSV Loaded', bg=display_color, fg='gray', font=('Digital-7 Mono', 45))
+alertTEXT = Button(rightalertFrame, text='TSV Loaded', bg=display_color, fg='gray', font=('Digital-7 Mono', 40), bd=0, activebackground=display_color, command=lambda: holdFUNC(grpTEXT.cget('text')))
 alertTEXT.grid(row=1, column=0, columnspan=4, sticky='NSEW')
 
 row3alertTEXT = Label(rightalertFrame, text='', bg=display_color, fg='grey', font=('Digital-7 Mono', 10))
 row3alertTEXT.grid(row=2, column=0, columnspan=4, sticky='NSEW')
 
-rightalertFrame.rowconfigure(0, weight=0, uniform='alerts')
+rightalertFrame.rowconfigure(0, weight=1, uniform='alerts')
 rightalertFrame.rowconfigure(1, weight=2, uniform='alerts')
 rightalertFrame.rowconfigure(2, weight=1, uniform='alerts')
 
@@ -884,7 +899,7 @@ compassRangeTEXT = Label(leftcompassFrame, text='15 Miles', bg=display_color)
 compassRangeTEXT.grid(row=0, column=1, sticky='NESW')
 
 ##Right Site Compass Frame
-img = Image.open('static/images/compass.png')  # .rotate(compassRotate(bearing))
+img = Image.open('static/images/compass.png').rotate(0)  # .rotate(compassRotate(bearing))
 
 tkimage = ImageTk.PhotoImage(img)
 compassIMG = Label(leftcompassFrame, image=tkimage, bg=display_color)
@@ -916,23 +931,27 @@ syslogsyslogTAB2Label.grid(column=1, row=0, padx=10, pady=10, sticky='NESW')
 sys_logTEXT = Text(syslogTAB2, bg='gray', relief=SOLID)
 sys_logTEXT.grid(column=0, row=0, padx=2, pady=2, sticky='NESW')
 
+def updateDisplay_color(color):
+    config.set('Pi25MCH', 'display_color', color)
+    write_file()
+
 ##Tab3 Color Picker
-tanBTN = Button(themegTAB3, text='TAN', bg='tan', command=lambda: colorFUNC('tan'))
+tanBTN = Button(themegTAB3, text='TAN', bg='tan', command=lambda: [colorFUNC('tan'), updateDisplay_color('tan')])
 tanBTN.grid(column=0, row=0, sticky='NESW')
 
-blackBTN = Button(themegTAB3, text='BLK', bg='black', fg='white', command=lambda: colorFUNC('black'))
+blackBTN = Button(themegTAB3, text='BLK', bg='black', fg='white', command=lambda: [colorFUNC('black'), updateDisplay_color('black')])
 blackBTN.grid(column=1, row=0, sticky='NESW')
 
-greenBTN = Button(themegTAB3, text='GRN', bg='green', command=lambda: colorFUNC('green'))
+greenBTN = Button(themegTAB3, text='GRN', bg='green', command=lambda: [colorFUNC('green'), updateDisplay_color('green')])
 greenBTN.grid(column=2, row=0, sticky='NESW')
 
-orangeBTN = Button(themegTAB3, text='ORG', bg='orange', command=lambda: colorFUNC('orange'))
+orangeBTN = Button(themegTAB3, text='ORG', bg='orange', command=lambda: [colorFUNC('orange'), updateDisplay_color('orange')])
 orangeBTN.grid(column=0, row=1, sticky='NESW')
 
-yellowBTN = Button(themegTAB3, text='YEL', bg='yellow', command=lambda: colorFUNC('yellow'))
+yellowBTN = Button(themegTAB3, text='YEL', bg='yellow', command=lambda: [colorFUNC('yellow'), updateDisplay_color('yellow')])
 yellowBTN.grid(column=1, row=1, sticky='NESW')
 
-pinkBTN = Button(themegTAB3, text='PNK', bg='pink', command=lambda: colorFUNC('pink'))
+pinkBTN = Button(themegTAB3, text='PNK', bg='pink', command=lambda: [colorFUNC('pink'), updateDisplay_color('pink')])
 pinkBTN.grid(column=2, row=1, sticky='NESW')
 
 themegTAB3.rowconfigure(0, weight=1)
@@ -2092,6 +2111,10 @@ def colorFUNC(color):
 
     modeTEXT.configure(bg=color, fg=textcolor)
 
+    sysidTEXT.configure(fg=textcolor, bg=color)
+
+    #secondaryTEXT.configure(fg=textcolor, bg=color)
+
     ##Buttons
     # holdBTN.configure(fg=textcolor, bg=color, activebackground=color)
     # skipBTN.configure(fg=textcolor, bg=color, activebackground=color)
@@ -2114,9 +2137,7 @@ def colorFUNC(color):
     nacTEXT.configure(fg=textcolor, bg=color)
     wacnTEXT.configure(fg=textcolor, bg=color)
 
-    sysidTEXT.configure(fg=textcolor, bg=color)
 
-    secondaryTEXT.configure(fg=textcolor, bg=color)
     tgidTEXT.configure(fg=textcolor, bg=color)
     systemTEXT.configure(fg=textcolor, bg=color)
     offsetTEXT.configure(fg=textcolor, bg=color)
@@ -2142,7 +2163,9 @@ def colorFUNC(color):
 '''
 
 
+
 colorFUNC(display_color)
+
 
 if not os.path.exists('config.ini'):
     config['Pi25MCH'] = {'uri': ''}
@@ -2157,6 +2180,8 @@ else:
 
     # Print value at test2
     print(config.get('Pi25MCH', 'uri'))
+
+
 
 ##Check if op25 url is specified
 if config.get('Pi25MCH', 'uri') == '':
