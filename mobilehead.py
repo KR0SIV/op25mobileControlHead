@@ -2,17 +2,20 @@ import requests
 import json
 from tkinter import *
 from tkinter import ttk
-from tkinter import scrolledtext as tks
 import threading
 # import pyglet
 from PIL import Image, ImageTk
 import time
-import io
 import re
 from datetime import datetime
 import configparser, os
 from os import walk
 from playsound import playsound
+from zeep import Client
+from bs4 import BeautifulSoup
+from BU343S4Driver import *
+import math
+from math import cos, asin, sqrt
 
 
 def sysmsgUPDATE(text, bg):
@@ -895,11 +898,195 @@ rightalertFrame.columnconfigure(0, weight=1)
 # Label(leftcompassFrame, text='placeholder').grid(row=0, column=0, sticky='nsew')
 
 
+####START GPS FUNCTIONS
+
+def dddmm2ddmm(lat, lon):
+    if float(lon) >= 0:
+        lonneg = True
+    else:
+        lonneg = False
+
+
+    latitude = float(lat)
+    longitude = float(lon)
+
+    lat_degree = int(latitude / 100);
+    lng_degree = int(longitude / 100);
+
+    lat_mm_mmmm = latitude % 100
+    lng_mm_mmmmm = longitude % 100
+
+
+    converted_latitude = lat_degree + (lat_mm_mmmm / 60)
+
+    if lonneg == True:
+        lng_degree = - lng_degree
+        converted_longitude = lng_degree - (lng_mm_mmmmm / 60)
+    else:
+        converted_longitude = lng_degree - (lng_mm_mmmmm / 60)
+
+
+    return {'lat':converted_latitude, 'lon':converted_longitude}
+
+
+
+def distance(lat1, lon1, lat2, lon2):
+    p = 0.017453292519943295
+    a = 0.5 - cos((lat2 - lat1) * p) / 2 + cos(lat1 * p) * cos(lat2 * p) * (1 - cos((lon2 - lon1) * p)) / 2
+    return 12742 * asin(sqrt(a))
+
+
+def closest(data, v):
+    return min(data, key=lambda p: distance(v['lat'], v['lon'], p['lat'], p['lon']))
+
+
+def calculate_initial_compass_bearing(pointA, pointB):
+    if (type(pointA) != tuple) or (type(pointB) != tuple):
+        raise TypeError("Only tuples are supported as arguments")
+
+    lat1 = math.radians(pointA[0])
+    lat2 = math.radians(pointB[0])
+
+    diffLong = math.radians(pointB[1] - pointA[1])
+
+    x = math.sin(diffLong) * math.cos(lat2)
+    y = math.cos(lat1) * math.sin(lat2) - (math.sin(lat1)
+            * math.cos(lat2) * math.cos(diffLong))
+
+    initial_bearing = math.atan2(x, y)
+
+    # Now we have the initial bearing but math.atan2 return values
+    # from -180° to + 180° which is not what we want for a compass bearing
+    # The solution is to normalize the initial bearing as shown below
+    initial_bearing = math.degrees(initial_bearing)
+    compass_bearing = (initial_bearing + 360) % 360
+
+    '''
+    note: this is highly approximate...
+    '''
+    dirs = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
+            "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"]
+    ix = int((compass_bearing + 11.25)/22.5)
+    direction = dirs[ix % 16]
+
+    return direction
+
+
+def nearestSite(gpsLocation, siteLocations):
+    with open(siteLocations) as database:
+        rows = database.read().split('\n')
+        siteList = []
+        count = 1
+        for i in rows:
+
+            try:
+                columns = rows[count].split('\t')
+                rfss = columns[0]
+                site = columns[1]
+                lat = columns[2]
+                lon = columns[3]
+                range = columns[4]
+                descr = columns[5]
+
+
+                siteList.append({'rfss': int(rfss), 'site': int(site), 'lat': float(lat), 'lon': float(lon), 'range': float(range), 'descr': descr})
+                #print(siteList)
+            except Exception as e:
+                #print(e)
+                count = count + 1
+            count = count + 1
+
+        closestSite = [closest(siteList, gpsLocation)]
+        bear = (calculate_initial_compass_bearing(pointA=(gpsLocation['lat'], gpsLocation['lon']), pointB=(closest(siteList, gpsLocation)['lat'], closest(siteList, gpsLocation)['lon'])))
+
+        dist = distance(lat1=gpsLocation['lat'], lon1=gpsLocation['lon'], lat2=closest(siteList, gpsLocation)['lat'], lon2=closest(siteList, gpsLocation)['lon'])
+
+
+        sitesDict = closestSite[0]
+        sitesDict['bearing'] = bear
+        sitesDict['distance'] = round(dist, 2)
+        return sitesDict
+
+def compassRotate(bearing):
+    angle = 0
+    if bearing == 'N':
+        angle = 0
+    if bearing == 'NNE':
+        angle = 23
+    if bearing == 'NE':
+        angle = 45
+    if bearing == 'ENE':
+        angle = 67
+    if bearing == 'E':
+        angle = 90
+    if bearing == 'ESE':
+        angle = 112
+    if bearing == 'SE':
+        angle = 135
+    if bearing == 'SSE':
+        angle = 157
+    if bearing == 'S':
+        angle = 180
+    if bearing == 'SSW':
+        angle = 203
+    if bearing == 'SW':
+        angle = 225
+    if bearing == 'WSW':
+        angle = 247
+    if bearing == 'W':
+        angle = 270
+    if bearing == 'WNW':
+        angle = 293
+    if bearing == 'NW':
+        angle = 315
+    if bearing == 'NNW':
+        angle = 338
+    return angle
+
+
+def gpsRunner():
+    time.sleep(10)
+    print('Starting gspRunner')
+
+    gps = BU343S4Driver("COM4")
+    siteTSV = 'systems/348/sitelocations.tsv'
+
+    while True:
+        try:
+            gps.update_position()
+            gpsLat = gps.get_latDirec()
+            gpsLon = gps.get_longDirec()
+
+            if len(gpsLon) <5:
+                raise EXCEPTION
+
+            gpsLocation = dddmm2ddmm(gpsLat, gpsLon)
+            #print(gpsLocation)
+
+            #gpsLocation = {'lat': 41.803210, 'lon': -80.946810}
+            bearing = nearestSite(gpsLocation, siteTSV)['bearing']
+
+            img = Image.open('static/images/compass.png').rotate(compassRotate(bearing))
+            tkimage = ImageTk.PhotoImage(img)
+
+            #print(nearestSite(gpsLocation, siteTSV))
+
+            #compassRangeTEXT.configure(text=nearestSite(gpsLocation, siteTSV)['range'])
+            compassIMG.configure(image=tkimage)
+            compassRangeTEXT.configure(text=nearestSite(gpsLocation, siteTSV)['descr'])
+        except:
+            pass
+
+######END GPS FUNCTIONS
+#gpsThread = threading.Thread(target=gpsRunner).start()
+
 compassRangeTEXT = Label(leftcompassFrame, text='15 Miles', bg=display_color)
 compassRangeTEXT.grid(row=0, column=1, sticky='NESW')
 
 ##Right Site Compass Frame
-img = Image.open('static/images/compass.png').rotate(0)  # .rotate(compassRotate(bearing))
+
+
+img = Image.open('static/images/compass.png')#.rotate(0)  # .rotate(compassRotate(bearing))
 
 tkimage = ImageTk.PhotoImage(img)
 compassIMG = Label(leftcompassFrame, image=tkimage, bg=display_color)
@@ -1813,10 +2000,6 @@ if 'True' in config.get(sectionname, 'calllogging'):
 
 
 def rrpopulateSystems(selection):
-    import requests
-    from bs4 import BeautifulSoup
-    import re
-
     # rrSearch = 'https://www.radioreference.com/apps/db/?action=regexp&regexp=' + input('State: ')
     rrSearch = 'https://www.radioreference.com/apps/db/?action=regexp&regexp=' + selection
     r = requests.get(rrSearch)
@@ -1881,7 +2064,6 @@ rrselectsystemDRPDWN.grid(column=1, row=0, columnspan=5, sticky='NSEW', pady=5, 
 #rrSectionErrorTEXT = Label(rrimportFrame, text='Failed! Check Account')
 
 def generateTSV(rrUser, rrPass, rrsysid):
-    from zeep import Client
 
     rrSystemId = int(rrsysid)
 
@@ -1940,9 +2122,7 @@ def generateTSV(rrUser, rrPass, rrsysid):
 def rrimportFUNC():
     selectedsystem = rrimportselectsystemVar.get()
     selectedstate = rrstateentryVar.get()
-    import requests
-    from bs4 import BeautifulSoup
-    import re
+
 
     # rrSearch = 'https://www.radioreference.com/apps/db/?action=regexp&regexp=' + input('State: ')
     rrSearch = 'https://www.radioreference.com/apps/db/?action=regexp&regexp=' + selectedstate
