@@ -16,6 +16,7 @@ from bs4 import BeautifulSoup
 from BU343S4Driver import *
 import math
 from math import cos, asin, sqrt
+import serial.tools.list_ports
 
 
 def sysmsgUPDATE(text, bg):
@@ -219,7 +220,7 @@ def update():
                 rfid = str(data[1][rawnac]['rfid'])
                 # rfidTEXT.configure(text='RFSS ' + rfid)
                 stid = str(data[1][rawnac]['stid'])
-                # stidTEXT.configure(text='SITE ' + stid)
+                #stidTEXT.configure(text='SITE ' + stid)
                 secondary = str(data[1][rawnac]['secondary'])
                 altcc = re.sub('\[|]', '', secondary).split(',')
                 # secondaryTEXT.configure(
@@ -241,11 +242,20 @@ def update():
                 pass
 
         except:
+            config.read('config.ini')
+            system = config.get('GPS', 'system')
+            rfsssite = config.get('SDR_Defaults', 'site')
+            rfss = re.findall('(?:^.*:R)(\d{1,3})', rfsssite)
+            site = re.findall('(?:^.*:S)(\d{1,3})', rfsssite)
+
+            trunkfile = 'systems/' + system + '/sites/' + 'rfss' + str(rfss[0]) + 'site' + str(site[0]) + '.tsv'
+
+
             sysmsgUPDATE(text='Reconnecting to OP25 Instance', bg='red')
             tagTEXT.configure(text='Connecting...')
             time.sleep(1)
             sysmsgUPDATE(text='Remote: Start OP25', bg='green')
-            sendCMD(function='startop25', sdr='rtl', lna='49', samplerate='2000000', trunkfile='trunk.tsv',
+            sendCMD(function='startop25', sdr='rtl', lna='49', samplerate='2000000', trunkfile=trunkfile,
                     op25dir='/home/op25/op25/op25/gr-op25_repeater/apps/')
             time.sleep(7)
             sysmsgUPDATE(text='Attempting to reconnect', bg='red')
@@ -268,7 +278,7 @@ def nightMode():
     menuBTN.configure(bg='gray')
     # call_logTEXT.tag_configure('unhighlightline', background='gray')
     call_logTEXT.configure(bg='gray')
-    compassRangeTEXT.configure(bg='black', fg='gray')
+    #compassRangeTEXT.configure(bg='black', fg='gray')
     style.theme_use('Nightmode')
     count = 10
     while count != 0:
@@ -276,6 +286,7 @@ def nightMode():
         time.sleep(1)
         count = count - 1
     nightmodePrompt.grid_remove()
+
 
 
 ##Button Functions
@@ -849,7 +860,7 @@ frequenciesTEXT = Label(rightdetailsFrame, text="", bg=display_color, font=('Dig
 
 # Label(rightdetailsFrame, text='Placeholder line 2', font=('Digital-7 Mono', 15), bg=display_color).grid(row=1, column=0, sticky='W')
 
-systemTEXT = Label(righttxrxFrame, text="", bg=display_color, font=('Digital-7 Mono', 32), anchor=SW,
+systemTEXT = Message(righttxrxFrame, text="", bg=display_color, font=('Digital-7 Mono', 15), anchor=SW,
                    justify=LEFT)  ###CONTAINS PLACEHOLDER TEXT
 systemTEXT.grid(column=0, row=0, sticky='Se')
 
@@ -1045,12 +1056,21 @@ def compassRotate(bearing):
 
 
 def gpsRunner():
-    time.sleep(10)
+    #time.sleep(10)
+    config.read('config.ini')
+
     print('Starting gspRunner')
 
-    gps = BU343S4Driver("COM4")
-    siteTSV = 'systems/348/sitelocations.tsv'
+    try:
+        comport = gpsportVar.get()
+        gps = BU343S4Driver(comport)
+    except:
+        comport = config.get('GPS', 'comport')
+        gps = BU343S4Driver(comport)
 
+    #siteTSV = 'systems/348/sitelocations.tsv'
+    siteTSV = 'sitelocations.tsv'
+    currentsite = ''
     while True:
         try:
             gps.update_position()
@@ -1065,6 +1085,8 @@ def gpsRunner():
 
             #gpsLocation = {'lat': 41.803210, 'lon': -80.946810}
             bearing = nearestSite(gpsLocation, siteTSV)['bearing']
+            rfss = nearestSite(gpsLocation, siteTSV)['rfss']
+            site = nearestSite(gpsLocation, siteTSV)['site']
 
             img = Image.open('static/images/compass.png').rotate(compassRotate(bearing))
             tkimage = ImageTk.PhotoImage(img)
@@ -1073,15 +1095,39 @@ def gpsRunner():
 
             #compassRangeTEXT.configure(text=nearestSite(gpsLocation, siteTSV)['range'])
             compassIMG.configure(image=tkimage)
-            compassRangeTEXT.configure(text=nearestSite(gpsLocation, siteTSV)['descr'])
-        except:
+            #compassRangeTEXT.configure(text=nearestSite(gpsLocation, siteTSV)['descr'])
+            closestsiteTEXT.configure(text='RFSS: ' + str(rfss) + ' Site: ' + str(site))  ####################################################
+            ##need to save current site to DB and reload it
+            if 'NO FIX' in closestsiteTEXT.cget('text'):
+                pass
+            else:
+                if closestsiteTEXT.cget('text') not in currentsite:
+                    currentsite = closestsiteTEXT.cget('text')
+                    #sysmsgUPDATE(text=closestsiteTEXT.cget('text'), color='green')
+
+                    rfss = re.findall('(?:^.*RFSS: )(\d{1,3})', currentsite)
+                    site = re.findall('(?:.*Site: )(\d{1,3})', currentsite)
+
+                    gpsSiteConfig = 'GPS:R' + str(rfss[0]) + ':S' + str(site[0])
+                    confwriter('SDR_Defaults', 'site', gpsSiteConfig)
+                    gpssiteVar.set(gpsSiteConfig)
+                    currentsite = closestsiteTEXT.cget('text')
+                    print(currentsite)
+                    write_file()
+                    #sysmsgUPDATE(text=currentsite, color='green')
+                    restartop25FUNC()
+
+
+        except BaseException as e:
+            print(e)
             pass
 
 ######END GPS FUNCTIONS
-#gpsThread = threading.Thread(target=gpsRunner).start()
 
-compassRangeTEXT = Label(leftcompassFrame, text='15 Miles', bg=display_color)
-compassRangeTEXT.grid(row=0, column=1, sticky='NESW')
+
+closestsiteTEXT = Label(leftcompassFrame, text='NO FIX', bg=display_color, fg='red')
+closestsiteTEXT.grid(row=0, column=1, sticky='NESW')
+
 
 ##Right Site Compass Frame
 
@@ -1881,6 +1927,7 @@ Pi25SettingsTEXT = Label(menu_frame, text='Pi25 Mobile Control Head Settings')
 Pi25SettingsTEXT.grid(column=1, row=2, padx=0, pady=0, sticky='NW')
 
 pi25settingsthemeOverlay = Frame(menu_frame, bd=3, relief=GROOVE)
+pi25settingsGPSOverlay = Frame(menu_frame, bd=3, relief=GROOVE)
 
 pi25settingsFrame = Frame(menu_frame, bd=3, relief=GROOVE)
 pi25settingsFrame.grid(column=1, row=3, rowspan=3, columns=4, rows=3,  padx=25, sticky='NESW')
@@ -1918,6 +1965,101 @@ pi25settingsthemeOverlay.columnconfigure(2, weight=1, uniform='pi25themeoverlay'
 
 
 
+gpsportTEXT = Label(pi25settingsGPSOverlay, text='Select GPS: ')
+gpsportTEXT.grid(column=0, row=0)
+
+if not config.has_option('GPS', 'enabled'):
+    confwriter('GPS', 'enabled', 'False')
+    confwriter('GPS', 'comport', 'Select a Comport')
+    write_file()
+
+def gpsFUNC():
+    config.read('config.ini')
+
+    if 'raised' in enablegpsBTN.cget('relief'):
+        confwriter('GPS', 'enabled', 'True')
+        confwriter('GPS', 'comport', gpsportVar.get())
+        confwriter('GPS', 'system', gpssystemVar.get())
+
+        write_file()
+        enablegpsBTN.configure(text='GPS\rENABLED', relief=SUNKEN)
+        threading.Thread(target=gpsRunner).start()
+        sysmsgUPDATE(text='Enabling GPS on Comport: ' + gpsportVar.get(), bg='green')
+
+    else:
+        confwriter('GPS', 'enabled', 'False')
+        write_file()
+        enablegpsBTN.configure(text='GPS\rDISABLED', relief=RAISED)
+        sysmsgUPDATE(text='Disabling GPS', bg='green')
+
+
+
+systems = []
+for (dirpath, dirnames, filenames) in walk('systems/'):
+    systems.extend(dirnames)
+    break
+
+
+
+try:
+    config.read('config.ini')
+    confgpssystem = config.get('GPS', 'system')
+except:
+    config.read('config.ini')
+    confwriter('GPS', 'system', 'Select a System')
+    write_file()
+    confgpssystem = 'Select a System'
+
+gpssystemVar = StringVar(defaultSDRFrame)
+gpssystemVar.set(confgpssystem)  # default value
+
+gpssystemOptions = OptionMenu(pi25settingsGPSOverlay, gpssystemVar, *systems)
+gpssystemOptions.grid(column=2, row=0, sticky='NESW')
+
+
+
+
+enablegpsBTN = Button(pi25settingsGPSOverlay, text='', command=lambda: [gpsFUNC(), pi25settingsGPSOverlay.grid_remove(), pi25settingsFrame.grid(column=1, row=3, rowspan=3, columns=4, rows=3,  padx=25, sticky='NESW')])
+enablegpsBTN.grid(column=4, row=0)
+
+
+
+config.read('config.ini')
+gpsStatus = config.get('GPS', 'enabled')
+if 'False' in gpsStatus:
+    enablegpsBTN.configure(text='ENABLE\rGPS', relief=RAISED)
+if 'True' in gpsStatus:
+    enablegpsBTN.configure(text='DISABLE\rGPS', relief=SUNKEN)
+    threading.Thread(target=gpsRunner).start()
+
+
+
+############WHY DOESNT THIS WORK, SHOULD IT NOT RELOAD THE PORT LISTS ON EACH OPTION SELECTION...???>?
+
+def updateGPSPorts(d):
+    print(d)
+    ports = serial.tools.list_ports.comports()
+    portList = [port.name for port in ports]
+
+    gpsportOptions = OptionMenu(pi25settingsGPSOverlay, gpsportVar, *portList)
+    gpsportOptions.grid(column=1, row=0, sticky='NESW')
+
+
+ports = serial.tools.list_ports.comports()
+portList = [port.name for port in ports]
+
+if config.get('GPS', 'comport'):
+    confgpsPort = config.get('GPS', 'comport')
+else:
+    confgpsPort = 'Select a Port'
+
+gpsportVar = StringVar(defaultSDRFrame)
+gpsportVar.set(confgpsPort)  # default value
+
+gpsportOptions = OptionMenu(pi25settingsGPSOverlay, gpsportVar, *portList, command=updateGPSPorts)
+gpsportOptions.grid(column=1, row=0, sticky='NESW')
+
+
 #        confwriter(sectionname, 'callLogging', 'False')
 ###Column 0 and Rows 0-2
 
@@ -1947,7 +2089,7 @@ menugridBTN3.grid(column=0, row=2, sticky='NESW')
 
 ###Column 1 and Rows 0-3
 
-menugridBTN4 = Button(pi25settingsFrame, text='Unpopulated\rButton')
+menugridBTN4 = Button(pi25settingsFrame, text='GPS\rSettings', command=lambda: [pi25settingsGPSOverlay.grid(column=1, row=3, rowspan=3, columns=4, rows=3,  padx=25, sticky='NESW'), pi25settingsFrame.grid_forget()])
 menugridBTN4.grid(column=1, row=0, sticky='NESW')
 
 menugridBTN5 = Button(pi25settingsFrame, text='Unpopulated\rButton')
@@ -2193,6 +2335,11 @@ def samplerateFUNC(selection):
     write_file()
 
 
+def siteFUNC(selection):
+    config.set(sdrSection, 'site', selection)
+    write_file()
+
+
 def restartop25FUNC():
     config.read('config.ini')
     sdr = config.get(sdrSection, 'sdr')
@@ -2201,7 +2348,16 @@ def restartop25FUNC():
     sendCMD(function='stopop25')
     time.sleep(2)
     updateStatusText()
-    sendCMD(function='startop25', sdr=sdr, lna=lna, samplerate=samplerate, trunkfile='trunk.tsv',
+    config.read('config.ini')
+    system = config.get('GPS', 'system')
+    rfsssite = config.get('SDR_Defaults', 'site')
+    rfss = re.findall('(?:^.*:R)(\d{1,3})', rfsssite)
+    site = re.findall('(?:^.*:S)(\d{1,3})', rfsssite)
+
+
+
+    trunkfile = 'systems/' + system + '/sites/' + 'rfss' + str(rfss[0]) + 'site' + str(site[0]) + '.tsv'
+    sendCMD(function='startop25', sdr=sdr, lna=lna, samplerate=samplerate, trunkfile=trunkfile,
             op25dir='/home/op25/op25/op25/gr-op25_repeater/apps/')
 
 
@@ -2240,8 +2396,57 @@ samplerateOptions = OptionMenu(defaultSDRFrame, samplerateVar, '1.2e6', '1.4e6',
                                command=samplerateFUNC)
 samplerateOptions.grid(column=1, row=2, sticky='NESW')
 
-restartop25BTN = Button(defaultSDRFrame, text='Restart OP25', command=restartop25FUNC)
-restartop25BTN.grid(column=1, row=3, pady=5, padx=5, sticky='E')
+###CREATE LIST OF SITES
+with open('systems/348/sitelocations.tsv') as database:
+    rows = database.read().split('\n')
+    siteList = []
+    count = 1
+    for i in rows:
+        try:
+            # print(count)
+            columns = rows[count].split('\t')
+            rfss = columns[0]
+            site = columns[1]
+            lat = columns[2]
+            lon = columns[3]
+            range = columns[4]
+            descr = columns[5]
+
+            siteList.append(
+                {'rfss': int(rfss), 'site': int(site), 'lat': float(lat), 'lon': float(lon), 'range': float(range),
+                 'descr': descr})
+
+            # print(siteList)
+            count = count + 1
+        except:
+            count = count + 1
+
+
+count = 0
+result = []
+for i in siteList:
+    rfss = siteList[count]['rfss']
+    site = siteList[count]['site']
+    lat = siteList[count]['lat']
+    lon = siteList[count]['lon']
+    range = siteList[count]['range']
+    descr = siteList[count]['descr']
+
+    line = str(descr) + ':R' + str(rfss) + ':S' + str(site)
+
+    result.insert(count, line)
+
+    count = count + 1
+
+gpssiteVar = StringVar(defaultSDRFrame)
+gpssiteVar.set('Select a Site')  # default value
+
+try:
+    gpssiteOptions = OptionMenu(defaultSDRFrame, gpssiteVar, *result, command=siteFUNC)
+    gpssiteOptions.grid(column=1, row=3, sticky='NESW')
+except:
+    pass
+
 
 config.read('config.ini')
 sdrSection = 'SDR_Defaults'
@@ -2250,27 +2455,27 @@ if sdrSection not in config.sections():
     confwriter(sdrSection, 'sdr', sdrVar.get())
     confwriter(sdrSection, 'lna', lnaVar.get())
     confwriter(sdrSection, 'samplerate', samplerateVar.get())
+    confwriter(sdrSection, 'site', gpssiteVar.get())
 config.read('config.ini')
 sdrVar.set(config.get(sdrSection, 'sdr'))
 lnaVar.set(config.get(sdrSection, 'lna'))
+gpssiteVar.set(config.get(sdrSection, 'site'))
 samplerateVar.set(config.get(sdrSection, 'samplerate'))
 
-scanmodeTEXT = Label(menu_frame, text='Default Scanning Mode')
-scanmodeTEXT.grid(column=0, row=4, padx=15, pady=0, sticky='NW')
 
-scanmodeFrame = Frame(menu_frame, bd=3, relief=GROOVE)
-scanmodeFrame.grid(column=0, row=5, padx=50, sticky='NESW')
-
+siteTEXT = Label(defaultSDRFrame, text='SITE:   ')
+siteTEXT.grid(column=0, row=3, sticky='NEWS')
 menu_frame.columnconfigure(0, weight=0)
 
-scanmodebtnTEXT = Label(scanmodeFrame, text='Select Your Scan Mode: ')
-scanmodebtnTEXT.grid(column=0, row=0)
+scanmodebtnFrame = Frame(defaultSDRFrame)
+scanmodebtnFrame.grid(column=1, row=4, sticky='NESW')
 
-scanmodebtnFrame = Frame(scanmodeFrame)
-scanmodebtnFrame.grid(column=1, row=0, sticky='NESW')
 
-scanmodeFrame.columnconfigure(0, weight=1)
-scanmodeFrame.columnconfigure(1, weight=1)
+
+
+restartop25BTN = Button(scanmodebtnFrame, text='Restart OP25', command=restartop25FUNC)
+restartop25BTN.grid(column=2, row=0, pady=5, padx=5, sticky='E')
+
 
 def scanmodeConf(mode):
     config.read('config.ini')
@@ -2356,7 +2561,7 @@ def colorFUNC(color):
     # call_logTEXT.configure(fg=textcolor, bg=color)
     row3alertTEXT.configure(fg=textcolor, bg=color)
 
-    compassRangeTEXT.configure(bg=color, fg=textcolor)
+    closestsiteTEXT.configure(bg=color, fg=textcolor)
     compassIMG.configure(bg=color)
     alertTEXT.configure(bg=color)
 

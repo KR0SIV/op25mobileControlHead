@@ -43,26 +43,11 @@ def generateTSV(rrUser, rrPass, rrsysid, op25dir):
     result = Talkgroups_type(client.service.getTrsTalkgroups(rrSystemId, 0, 0, 0, myAuthInfo))
     #print(result)
 
-    # abbreviate the system name
-    wordsInSysName = (len(sysName.split()))
-
-    sysNameAbb = ''
-    if wordsInSysName >= 2:
-        for i in range(wordsInSysName):
-            sysNameAbb = sysNameAbb + sysName.split()[i][0]
-        regex = re.compile('[^a-zA-Z]')
-        # First parameter is the replacement, second parameter is your input string
-        sysNameAbb = regex.sub('', sysNameAbb)
-    else:
-        sysNameAbb = sysName
-
-    print('Abbreviating ' + sysName + ' as ' + sysNameAbb)
-
     # construct the talkgroup and blacklist lists
     talkgroups = []
     for row in result:
         if row.enc == 0:
-            talkgroups.append([row.tgDec, sysNameAbb + ' ' + row.tgAlpha])#description row.tgDescr
+            talkgroups.append([row.tgDec, row.tgAlpha])#description row.tgDescr
         else:
             pass
 
@@ -110,10 +95,9 @@ def generateTSV(rrUser, rrPass, rrsysid, op25dir):
 
     def createtalkgroupList():
         try:
-            os.makedirs('systems/' + sysid + '/talkgroups')
-        except OSError as e:
-            if e.errno != e.errno.EEXIST:
-                raise
+            os.makedirs('systems/' + sysid)
+        except:
+            pass
 
 
         # output tsv files
@@ -122,8 +106,8 @@ def generateTSV(rrUser, rrPass, rrsysid, op25dir):
             try:
                 result = talkgroups[count]
                 tgid = str(result[0])
-                tgtag = str(result[1]).replace('OMMRC', '')
-                with open(op25OutputPath + 'systems/' + sysid + '/talkgroups/' + sysNameAbb.lower() + '_talkgroups.tsv', 'a+') as op25OutputFile:
+                tgtag = str(result[1])#.replace('OMMRC', '')
+                with open(op25OutputPath + 'systems/' + sysid + '/talkgroups.tsv', 'a+') as op25OutputFile:
                     op25OutputFile.write(tgid + '\t' + tgtag + '\r\n')  # tgid -tab- talkgroup tag
                 count = count + 1
             except Exception as e:
@@ -168,14 +152,14 @@ def generateTSV(rrUser, rrPass, rrsysid, op25dir):
                         pass
                     controlcount = controlcount + 1
 
-                systemC = '"' + sysNameAbb + ': ' + county + '"'
+                systemC = '"' + sysName + ': ' + county + '"'
                 cclist = '"' + dedicatedCC + ',' + alternateCC + '"'
                 offset = '"0"'
                 nac = '"0"'
                 modulation = '"CQPSK"'
-                tagfile = '"' + op25OutputPath + sysid + '_talkgroups.tsv"'
+                tagfile = '"'+op25OutputPath + 'systems/' + sysid + '/talkgroups.tsv"'
                 whitelist = '""'
-                blacklist = '"' +op25OutputPath + '/blacklist.tsv"'
+                blacklist = '"' +op25OutputPath + 'blacklist.tsv"'
                 centerfreq = '""'
 
                 rfss = str(result[count].rfss)
@@ -203,6 +187,7 @@ def startop25(sdr='rtl', lna='49', samplerate='2000000', trunkfile='trunk.tsv', 
 
     #op25dir = "op25/op25/gr25-op_repeater/apps"
     screen = "screen -Sdm op25 ./rx.py --args '" + sdr + "' -N 'LNA:" + lna + "' -S " + samplerate + " -o 25000 -T " + trunkfile + " -U -V -2 -X -l http:0.0.0.0:8080"
+
     os.popen('cd ' + op25OutputPath + ' && ' + screen)
 
 def stopop25():
@@ -273,7 +258,7 @@ sock.listen(1)
 
 while True:
     # Wait for a connection
-    print('waiting for a connection')
+    print('Listening for commands....\r\n')
     connection, client_address = sock.accept()
     try:
         #print('connection from', client_address)
