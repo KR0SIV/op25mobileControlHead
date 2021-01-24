@@ -435,7 +435,7 @@ def sendCMD(function, **kwargs):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         # Connect the socket to the port where the server is listening
-        server_address = ('192.168.122.25', 10000)
+        server_address = (re.findall('(?:http://)(.*)(?:\:)', config.get('Pi25MCH', 'uri'))[0], 10000)
         print('connecting to {} port {}'.format(*server_address))
         sock.connect(server_address)
 
@@ -860,7 +860,7 @@ frequenciesTEXT = Label(rightdetailsFrame, text="", bg=display_color, font=('Dig
 
 # Label(rightdetailsFrame, text='Placeholder line 2', font=('Digital-7 Mono', 15), bg=display_color).grid(row=1, column=0, sticky='W')
 
-systemTEXT = Message(righttxrxFrame, text="", bg=display_color, font=('Digital-7 Mono', 15), anchor=SW,
+systemTEXT = Label(righttxrxFrame, text="", bg=display_color, font=('Digital-7 Mono', 25), anchor=SW,
                    justify=LEFT)  ###CONTAINS PLACEHOLDER TEXT
 systemTEXT.grid(column=0, row=0, sticky='Se')
 

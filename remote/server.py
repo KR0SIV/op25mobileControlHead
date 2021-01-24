@@ -2,10 +2,6 @@ import socket
 import sys
 import os
 import ast
-
-op25OutputPath = os.getcwd() + '/'
-
-####################START Radio Reference Import####################
 import csv
 from zeep import Client
 import re
@@ -14,6 +10,16 @@ import os
 import requests
 import re
 from bs4 import BeautifulSoup
+
+
+op25OutputPath = os.getcwd() + '/'
+
+if not os.path.exists('blacklist.tsv'):
+    open('blacklist.tsv', 'w').close()
+if not os.path.exists('whitelist.tsv'):
+    open('whitelist.tsv', 'w').close()
+####################START Radio Reference Import####################
+
 
 def generateTSV(rrUser, rrPass, rrsysid, op25dir):
     # rrSystemId = int(input("What system ID would you like to download?"))
@@ -37,6 +43,18 @@ def generateTSV(rrUser, rrPass, rrsysid, op25dir):
     sysresult = client.service.getTrsDetails(rrSystemId, myAuthInfo).sysid
     sysid = sysresult[0].sysid
     print(sysName + ' system selected.')
+
+    sysNameSplit = sysName.split(' ')
+
+    sysnameCount = 0
+    shortname = ''
+    for i in sysNameSplit:
+        shortname = shortname + str(re.findall('(^.)', sysNameSplit[sysnameCount])[0])
+        sysnameCount = sysnameCount + 1
+
+
+
+
 
     # download talkgroups for given sysid
     Talkgroups_type = client.get_type('ns0:Talkgroups')
@@ -152,7 +170,7 @@ def generateTSV(rrUser, rrPass, rrsysid, op25dir):
                         pass
                     controlcount = controlcount + 1
 
-                systemC = '"' + sysName + ': ' + county + '"'
+                systemC = '"' + shortname + ': ' + county + '"'
                 cclist = '"' + dedicatedCC + ',' + alternateCC + '"'
                 offset = '"0"'
                 nac = '"0"'
