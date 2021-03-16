@@ -3,6 +3,9 @@
 A 'remote' control head that interfaces with an OP25 instance.
 We take advantage of some data end-points left exposed for the web interface of OP25 to fill out control head with data.
 
+### UPDATE
+## This application is being ported to Kivy. The repo will be made public upon first release and eventually linked here. While some bug fixes may be done the future is set on the Kivy implementation of Pi25mch.
+
 ## Goal of This Project
 
 My goal is to build a commercial radio or mobile scanner-like control head for remote mounting an SDR based P25 Phase 1 and Phase 2 capable scanner.
