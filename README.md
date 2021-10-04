@@ -45,14 +45,14 @@ When you're done, just switch back to 'site scan' mode.
 This is in-progress in a private repo until the first public release.
 
 ## List of parts used in the hardware build
-*NOTE: These are affiliate links which help support the project. This is a work-in-progress project, incomplete.
-Raspberry pi 'Juice' battery backup board: https://amzn.to/3FiMTmC
-Arkon VESA mount for mobile/car use: https://amzn.to/3iv9tON
-Official Raspberry pi 4 power supply for desktop use: https://amzn.to/2ZU4b9j
-Pi Touch Raspberry pi 3/4 housing for LCD: https://amzn.to/3ovVuMO
-4GB Raspberry pi 4: https://amzn.to/3Bklv4U
-Official Raspberry pi Touch Display: https://amzn.to/2ZVAggY
-VESA mount screws: https://amzn.to/3it9Idg
+- *NOTE: These are affiliate links which help support the project. This is a work-in-progress project, incomplete.
+- Raspberry pi 'Juice' battery backup board: https://amzn.to/3FiMTmC
+- Arkon VESA mount for mobile/car use: https://amzn.to/3iv9tON
+- Official Raspberry pi 4 power supply for desktop use: https://amzn.to/2ZU4b9j
+- Pi Touch Raspberry pi 3/4 housing for LCD: https://amzn.to/3ovVuMO
+- 4GB Raspberry pi 4: https://amzn.to/3Bklv4U
+- Official Raspberry pi Touch Display: https://amzn.to/2ZVAggY
+- VESA mount screws: https://amzn.to/3it9Idg
      
 
 ## How Do I Use It?
