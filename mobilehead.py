@@ -16,7 +16,6 @@ from bs4 import BeautifulSoup
 from BU343S4Driver import *
 import math
 from math import cos, asin, sqrt
-import serial.tools.list_ports
 
 
 def sysmsgUPDATE(text, bg):
@@ -135,13 +134,13 @@ def update():
                 rawnac = str(data[0]['nac'])
                 wacn = str(hex(data[0]['wacn']))
                 # wacnTEXT.configure(text='WACN: ' + wacn)
-                nacwacnTEXT.configure(text='NAC: ' + nac + ' / ' + 'WACN: ' + wacn)
+                nacwacnTEXT.configure(text='NAC: ' + nac + '\r' + 'WACN: ' + wacn)
                 tgid = str(data[0]['tgid'])
                 # tgidTEXT.configure(text=tgid)
                 system = str(data[0]['system'])
                 systemTEXT.configure(text=system)
-                sysid = str('Sys ID: ' + hex(data[0]['sysid']))
-                sysidTEXT.configure(text=sysid)
+                sysid = str('SYS ID: ' + hex(data[0]['sysid']))
+                #sysidTEXT.configure(text=sysid)
                 tag = str(data[0]['tag'])
 
                 if re.search('[a-zA-Z]', tag):
@@ -155,13 +154,14 @@ def update():
 
                 tagTEXT.configure(text=tag)
 
+
                 if grpaddr in alertfile:
                     if currentAlert != grpaddr:
                         currentAlert = grpaddr
                         alertTEXT.configure(text=tag[:13], fg='red')
                         timestamp = str(datetime.now().strftime('%I:%M:%S'))
                         row3alertTEXT.configure(text='Last Alert at: ' + timestamp)
-                        playsound('static/audio/beep_short_on.wav')
+                        #playsound('static/audio/beep_short_on.wav')
                 offset = str(data[0]['fine_tune'])
                 # offsetTEXT.configure(text='FREQ OFFSET: ' + offset)
                 freq = str(data[0]['freq'])
@@ -178,7 +178,7 @@ def update():
                 else:
                     encTEXT.configure(fg='black')
                     alertTEXT.configure(text=grpaddr, fg='blue')
-                    sysmsgUPDATE(text='Encrypted Call Detected on GRP: ' + grpaddr, bg='gray')
+                    #sysmsgUPDATE(text='Encrypted Call Detected on GRP: ' + grpaddr, bg='gray')
                     # if encTEXT.cget(bg='black'):
                     #    encTEXT.configure(fg='white')
                 srcaddr = str(data[1]['srcaddr'])
@@ -220,7 +220,7 @@ def update():
                 rfid = str(data[1][rawnac]['rfid'])
                 # rfidTEXT.configure(text='RFSS ' + rfid)
                 stid = str(data[1][rawnac]['stid'])
-                #stidTEXT.configure(text='SITE ' + stid)
+                # stidTEXT.configure(text='SITE ' + stid)
                 secondary = str(data[1][rawnac]['secondary'])
                 altcc = re.sub('\[|]', '', secondary).split(',')
                 # secondaryTEXT.configure(
@@ -231,7 +231,8 @@ def update():
                 frequencies = str(data[1][rawnac]['frequencies'])
                 # frequenciesTEXT.configure(text=frequencies)
                 tsbks = str(data[1][rawnac]['tsbks'])
-                # tsbksTEXT.configure(text='tsbks:' + tsbks)
+                #tsbksTEXT.configure(text='TSBKS: ' + tsbks)
+                sysidtsbksTEXT.configure(text=sysid + '\rTSBKS: ' + tsbks)
             except Exception as e:
                 # print(e)
                 pass
@@ -242,21 +243,12 @@ def update():
                 pass
 
         except:
-            config.read('config.ini')
-            system = config.get('GPS', 'system')
-            rfsssite = config.get('SDR_Defaults', 'site')
-            rfss = re.findall('(?:^.*:R)(\d{1,3})', rfsssite)
-            site = re.findall('(?:^.*:S)(\d{1,3})', rfsssite)
-
-            trunkfile = 'systems/' + system + '/sites/' + 'rfss' + str(rfss[0]) + 'site' + str(site[0]) + '.tsv'
-
-
             sysmsgUPDATE(text='Reconnecting to OP25 Instance', bg='red')
             tagTEXT.configure(text='Connecting...')
             time.sleep(1)
             sysmsgUPDATE(text='Remote: Start OP25', bg='green')
-            sendCMD(function='startop25', sdr='rtl', lna='49', samplerate='2000000', trunkfile=trunkfile,
-                    op25dir='/home/op25/op25/op25/gr-op25_repeater/apps/')
+            sendCMD(function='startop25', sdr='rtl', lna='49', samplerate='2000000', trunkfile='trunk.tsv',
+                    op25dir='/home/signalseverywhere/op25/op25/gr-op25_repeater/apps/')
             time.sleep(7)
             sysmsgUPDATE(text='Attempting to reconnect', bg='red')
             if jsoncmd('update', 0, 0) == None:
@@ -278,7 +270,7 @@ def nightMode():
     menuBTN.configure(bg='gray')
     # call_logTEXT.tag_configure('unhighlightline', background='gray')
     call_logTEXT.configure(bg='gray')
-    #compassRangeTEXT.configure(bg='black', fg='gray')
+    compassRangeTEXT.configure(bg='black', fg='gray')
     style.theme_use('Nightmode')
     count = 10
     while count != 0:
@@ -286,7 +278,6 @@ def nightMode():
         time.sleep(1)
         count = count - 1
     nightmodePrompt.grid_remove()
-
 
 
 ##Button Functions
@@ -332,18 +323,20 @@ def gotoFUNC():
 
 
 ##Main TKInter Config/Setup
-screen_width = 2280 // 2
-screen_height = 1080 // 2
+screen_width = 800
+screen_height = 480
 screen_geometry = '{}x{}'.format(screen_width, screen_height)
 
 main_window = Tk()
 # main_window.call('tk', 'scaling', 2.8) #Android phone scale
-main_window.call('tk', 'scaling', 2.0)  # Windows 10 scale
+main_window.call('tk', 'scaling', 0.8)  # Windows 10 scale
 main_window.title('OP25 Control Head')
 # main_window.resizable(0, 0)
 # main_window.wm_attributes('-transparentcolor', main_window['bg'])
 # main_window.configure(background='orange')
 main_window.geometry(screen_geometry)
+
+#main_window.attributes('-fullscreen', True)
 
 ##FRAME COLOR OPTIONS
 try:
@@ -360,49 +353,68 @@ rootFrame.grid(column=0, row=0, rows=3, columns=2, sticky='NESW')
 main_window.columnconfigure(0, weight=1)  # rootFrame spans to main_window width
 main_window.rowconfigure(0, weight=1)  # rootFrame spans to main_window height
 
+
+
 ##Top Frame;A button bar;menu bar;status text;something
 topFrame = Frame(rootFrame)
 # topFrame.grid(column=0, row=0, columnspan=2, sticky='NEW')
 # Label(topFrame, text='Status or Menu Bar Row').grid()
 rootFrame.columnconfigure(0, weight=1)  # topFrame spans to main_window width
+rootFrame.rowconfigure(0, weight=1)
 ##END Top Frame
 
 ##Primary Frame Holding Two Column Frames For Presenting Radio System Data
 activeFrame = Frame(rootFrame)
-activeFrame.grid(column=0, row=1, rows=3, columnspan=2, sticky='NESW')
-rootFrame.rowconfigure(1, weight=1)
+activeFrame.grid(column=0, row=0, rows=1, columnspan=2, sticky='NESW')
 
 leftFrame = Frame(activeFrame, bd=1, relief=SOLID)
-leftFrame.grid(column=0, row=0, rows=3, columns=1, sticky='NESW')
-Label(leftFrame, text='Left Frame Text').grid()
+leftFrame.grid(column=0, row=0, rows=1, columns=1, sticky='NESW')
+#Label(leftFrame, text='Left Frame Text').grid()
+
+activeFrame.columnconfigure(0, weight=1)
+activeFrame.rowconfigure(0, weight=1)
 
 rightFrame = Frame(activeFrame, bd=1, relief=SOLID)
-rightFrame.grid(column=1, row=0, rows=3, columns=1, sticky='NESW')
-Label(rightFrame, text='Right Frame Text').grid()
+#rightFrame.grid(column=1, row=0, rows=1, columns=1, sticky='NESW')
+#Label(rightFrame, text='Right Frame Text').grid()
 
 rightkeypadFrame = Frame(activeFrame, bd=1, relief=SOLID)
 # rightkeypadFrame.grid(column=1, row=0, columns=1, sticky='NESW')
 # rightkeypadFrame.grid_remove()
 
-activeFrame.columnconfigure(0, weight=1, uniform='LeftRightFrameGrouping')
-activeFrame.columnconfigure(1, weight=1, uniform='LeftRightFrameGrouping')
-activeFrame.rowconfigure(0, weight=1)
+#activeFrame.columnconfigure(0, weight=1, uniform='LeftRightFrameGrouping')
+#activeFrame.columnconfigure(1, weight=1, uniform='LeftRightFrameGrouping')
+#activeFrame.rowconfigure(0, weight=1)
+#activeFrame.rowconfigure(1, weight=0)
 ##END Primary Frame
 
 
+
+
+
+
+middleFrame = Frame(rootFrame, bd=1, relief=SOLID)
+middleFrame.grid(column=0, row=1, columns=10, sticky='SEW')
+
 menu_frame = Frame(rootFrame)
+
+
 
 ##Bottom Frame;A Button bar...
 bottomFrame = Frame(rootFrame, bd=1, relief=SOLID)
-bottomFrame.grid(column=0, row=4, columns=10, sticky='SEW')
+bottomFrame.grid(column=0, row=2, columns=10, sticky='SEW')
 
-bottomStatusTEXT = Label(bottomFrame, text='Loading Status Updates....', bg=display_color, anchor='w')
+bottomStatusTEXT = Label(bottomFrame, text='Loading Status Updates....', bg=display_color, anchor='w', font=("Arial", 30))
 bottomStatusTEXT.grid(sticky='NSEW')
 
 bottomFrame.columnconfigure(0, weight=1)
 
 ##END Bottom FRame
 
+
+rootFrame.rowconfigure(0, weight=1, uniform='tet')
+rootFrame.rowconfigure(1, weight=1, uniform='tet')
+rootFrame.rowconfigure(2, weight=0)
 
 ######################START CLIENT FOR REMOTE COMMAND FUNCTIONS################################
 
@@ -435,7 +447,7 @@ def sendCMD(function, **kwargs):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         # Connect the socket to the port where the server is listening
-        server_address = (re.findall('(?:http://)(.*)(?:\:)', config.get('Pi25MCH', 'uri'))[0], 10000)
+        server_address = (re.findall('(?://)(.*)(?::)', op25uri)[0], 10000)
         print('connecting to {} port {}'.format(*server_address))
         sock.connect(server_address)
 
@@ -498,39 +510,29 @@ leftstatusFrame.grid(column=0, row=0, columns=10, sticky='NEW')
 leftalphaFrame.columnconfigure(0, weight=1)
 
 leftbuttonFrame = Frame(lefttalkgroupFrame, bd=1, relief=SOLID)
-leftbuttonFrame.grid(column=1, row=0, rows=3, sticky='NESW')
+#leftbuttonFrame.grid(column=1, row=0, rows=3, sticky='NESW')
 # Label(leftbuttonFrame, text='left Status Frame').grid()
 lefttalkgroupFrame.columnconfigure(0, weight=1)
 lefttalkgroupFrame.rowconfigure(0, weight=1)
 ##END Row0;Talkgroup and Alpha Tag Frame
 
 ##Row1;Alert Frame;CAll Alerts;Notifications
-rightalertFrame = Frame(rightFrame, bd=1, relief=SOLID)
-rightalertFrame.grid(column=0, row=0, sticky='NESW')
-# Label(rightalertFrame, text='Alert Frame').grid()
-leftFrame.columnconfigure(0, weight=1)
+rightalertFrame = Frame(rightFrame, bd=1, relief=SOLID)#Alert Frame
+#rightalertFrame.grid(column=0, row=0, sticky='NESW')
+Label(rightalertFrame, text='Alert Frame').grid()
+#rightFrame.columnconfigure(0, weight=1)
 ##END Row1;Alert Frame
 
-# Row2;System Detail Frame
-leftsysFrame = Frame(leftFrame, bd=1, relief=SOLID)
-leftsysFrame.grid(column=0, row=2, sticky='NESW')
-#Label(leftsysFrame, text='System Detail Frame').grid()
-modeTEXT = Label(leftsysFrame, text='Mode: ', bg=display_color)
-modeTEXT.grid()
-leftFrame.columnconfigure(0, weight=1)
 
-leftFrame.rowconfigure(0, weight=1, uniform='LeftFrameRowGrouping')
-leftFrame.rowconfigure(1, weight=1, uniform='LeftFrameRowGrouping')
-leftFrame.rowconfigure(2, weight=1, uniform='LeftFrameRowGrouping')
-# END Row2;System Detail Frame
 
 ##END Left Primary Column Sub-Frames
 
 ##Right Primary Column Sub-Frames
-leftsiteFrame = Frame(leftFrame, bd=1, relief=SOLID)
-leftsiteFrame.grid(column=0, row=1, sticky='NESW')
+leftsiteFrame = Frame(rightFrame, bd=1, relief=SOLID)#detail frame contents
+leftsiteFrame.grid(column=0, row=0, sticky='NESW')
 # Label(leftsiteFrame, text='Right Site Frame').grid()
 rightFrame.columnconfigure(0, weight=1)
+
 
 rightdetailsFrame = Frame(leftsiteFrame, bd=1, relief=SOLID)
 rightdetailsFrame.grid(column=0, row=0, rows=4, sticky='NESW')
@@ -539,8 +541,8 @@ rightdetailsFrame.grid(column=0, row=0, rows=4, sticky='NESW')
 righttxrxFrame = Frame(rightdetailsFrame)
 righttxrxFrame.grid(column=0, row=3, sticky='EW')
 
-leftcompassFrame = Frame(leftsiteFrame, bd=1, relief=SOLID)
-leftcompassFrame.grid(column=1, row=0, sticky='NESW')
+#leftcompassFrame = Frame(leftsiteFrame, bd=1, relief=SOLID)
+#leftcompassFrame.grid(column=1, row=0, sticky='NESW')
 # Label(leftcompassFrame, text='Right Site Compass Frame').grid()
 
 
@@ -548,10 +550,10 @@ leftsiteFrame.columnconfigure(0, weight=1)
 leftsiteFrame.columnconfigure(1, weight=0)
 leftsiteFrame.rowconfigure(0, weight=1)
 
-rightlogFrame = Frame(rightFrame, bd=1, relief=SOLID)
-rightlogFrame.grid(column=0, row=1, sticky='NESW')
-rightFrame.columnconfigure(0, weight=1)
-rightFrame.rowconfigure(0, weight=1)
+rightlogFrame = Frame(topFrame, bd=1, relief=SOLID)
+rightlogFrame.grid(column=0, row=1, rowspan=2, columnspan=2, sticky='NESW')
+leftFrame.columnconfigure(0, weight=1)
+leftFrame.rowconfigure(0, weight=1)
 
 
 def nightmodebuttonFUNC():
@@ -590,14 +592,14 @@ def nouriFUNC():
 
 
 nouriPrompt = Frame(rootFrame, bd=5, relief=RAISED)
-# nouriPrompt.grid(row=1, column=0)
 
 
-nouriTEXT = Label(nouriPrompt, text='OP25 Web Server', fg='black', justify=CENTER, font=("Courier", 25), bd=5,
+
+nouriTEXT = Label(nouriPrompt, text='OP25 Web Server', fg='black', justify=CENTER, font=("Courier", 50), bd=5,
                   relief=RAISED)
 nouriTEXT.grid(column=0, row=0, columnspan=2)
 
-nouriENT = Entry(nouriPrompt)
+nouriENT = Entry(nouriPrompt, font=("Courier", 25))
 
 if not config.has_section('Pi25MCH'):
     config.add_section('Pi25MCH')
@@ -608,10 +610,10 @@ else:
     nouriENT.insert(0, config.get('Pi25MCH', 'uri'))
 nouriENT.grid(column=0, row=1, columnspan=2, sticky='WE')
 
-nouriBTN = Button(nouriPrompt, text='SAVE', command=nouriFUNC)
+nouriBTN = Button(nouriPrompt, text='SAVE', command=nouriFUNC, font=("Courier", 25))
 nouriBTN.grid(column=0, row=2)
 
-nouriBTN = Button(nouriPrompt, text='CANCEL', command=lambda: nouriPrompt.grid_forget())
+nouriBTN = Button(nouriPrompt, text='CANCEL', command=lambda: nouriPrompt.grid_forget(), font=("Courier", 25))
 nouriBTN.grid(column=1, row=2)
 
 ##Tabbed Window Start
@@ -686,10 +688,13 @@ style.theme_create('Nightmode', settings={
 })
 
 style.theme_use('Cloud')
+style.configure('TNotebook.Tab', font=('URW Gothic L','25','bold'), padding=[10, 10])
 
-logTAB = ttk.Notebook(rightlogFrame)
-rightlogFrame.columnconfigure(0, weight=1)
-rightlogFrame.rowconfigure(0, weight=1)
+logTAB = ttk.Notebook(middleFrame)
+
+middleFrame.columnconfigure(0, weight=1)
+
+
 
 # Tab1
 callTAB1 = Frame(logTAB, bg='lightgray')
@@ -725,15 +730,43 @@ rightFrame.rowconfigure(1, weight=2, uniform='RightFrameRowGrouping')
 ##END StatusFrame Labels and Positions
 
 ##AlphaTag Frame Labels and Positions
-statusTEXT = Label(leftstatusFrame, text="System Placeholder", bg=display_color, font=('Digital-7 Mono', 15))
+
+statusTEXT = Label(leftstatusFrame, text="System Placeholder", bg=display_color, font=('Digital-7 Mono', 25))
 statusTEXT.grid(column=0, row=0, sticky='W')
 
-tagTEXT = Label(leftalphaFrame, text="Connecting...", bg=display_color, font=('Digital-7 Mono', 32), anchor=SW,
+#leftstatusFrame.columnconfigure(0, weight=0)
+
+tagTEXT = Label(leftalphaFrame, text="Connecting...", bg=display_color, font=('Digital-7 Mono', 65), anchor=SW,
                 justify=LEFT)
 tagTEXT.grid(column=0, row=1, sticky='NW')
 
-bothaddrTEXT = Label(leftalphaFrame, bg=display_color, font=('Digital-7 Mono', 15), anchor=SW, justify=LEFT)
-bothaddrTEXT.grid(column=0, row=2, rowspan=2, sticky='NW')
+systemandaddrFrame = Frame(leftalphaFrame)
+systemandaddrFrame.grid(column=0, row=2, sticky='SW')
+
+systemTEXT = Label(systemandaddrFrame, text="", bg=display_color, font=('Digital-7 Mono', 45), anchor=SW, justify=LEFT)
+systemTEXT.grid(column=0, row=0, sticky='NESW')
+
+bothaddrTEXT = Label(systemandaddrFrame, bg=display_color, font=('Digital-7 Mono', 20), anchor=SW, justify=LEFT)
+bothaddrTEXT.grid(column=1, row=0, rowspan=2, sticky='NESW')
+
+syssitedetailsFrame = Frame(leftalphaFrame)
+syssitedetailsFrame.grid(column=0, row=3, columns=2, sticky='W')
+
+nacwacnTEXT = Label(syssitedetailsFrame, text=" "*40, bg=display_color, font=('Digital-7 Mono', 20), justify=LEFT)
+nacwacnTEXT.grid(column=0, row=0, sticky='W')
+
+sysidtsbksTEXT = Label(syssitedetailsFrame, text="", bg=display_color, font=('Digital-7 Mono', 20), justify=LEFT)
+sysidtsbksTEXT.grid(column=1, row=0, sticky='W')
+
+#tsbksTEXT = Label(syssitedetailsFrame, text="", bg=display_color, font=('Digital-7 Mono', 20), justify=LEFT)
+#tsbksTEXT.grid(column=1, row=1, sticky='NSW')
+
+
+systemandaddrFrame.rowconfigure(0, weight=1)
+
+leftcompassFrame = Frame(activeFrame, bd=1, relief=SOLID)
+leftcompassFrame.grid(column=1, row=0, sticky='NESW')
+
 
 ##END AlphaTag Frame Labels and Positions
 
@@ -846,11 +879,11 @@ rightkeypadFrame.rowconfigure(4, weight=1, uniform='keypadRow')
 
 ##RIght Site details Frame
 
-nacwacnTEXT = Label(rightdetailsFrame, text=" "*40, bg=display_color, font=('Digital-7 Mono', 20))
-nacwacnTEXT.grid(column=0, row=0)
+#nacwacnTEXT = Label(rightdetailsFrame, text=" "*40, bg=display_color, font=('Digital-7 Mono', 20))
+#nacwacnTEXT.grid(column=0, row=0)
 
-sysidTEXT = Label(rightdetailsFrame, text="", bg=display_color, font=('Digital-7 Mono', 20))
-sysidTEXT.grid(column=0, row=1, sticky='W')
+#sysidTEXT = Label(rightdetailsFrame, text="", bg=display_color, font=('Digital-7 Mono', 20))
+#sysidTEXT.grid(column=0, row=1, sticky='W')
 
 adjacent_dataTEXT = Label(rightdetailsFrame, text="", bg=display_color, font=('Digital-7 Mono', 22))
 #adjacent_dataTEXT.grid(column=0, row=2)
@@ -860,9 +893,9 @@ frequenciesTEXT = Label(rightdetailsFrame, text="", bg=display_color, font=('Dig
 
 # Label(rightdetailsFrame, text='Placeholder line 2', font=('Digital-7 Mono', 15), bg=display_color).grid(row=1, column=0, sticky='W')
 
-systemTEXT = Label(righttxrxFrame, text="", bg=display_color, font=('Digital-7 Mono', 25), anchor=SW,
-                   justify=LEFT)  ###CONTAINS PLACEHOLDER TEXT
-systemTEXT.grid(column=0, row=0, sticky='Se')
+#systemTEXT = Label(righttxrxFrame, text="", bg=display_color, font=('Digital-7 Mono', 32), anchor=SW,
+#                   justify=LEFT)  ###CONTAINS PLACEHOLDER TEXT
+#systemTEXT.grid(column=0, row=0, sticky='Se')
 
 bothrxtxTEXT = Label(righttxrxFrame, text="", bg=display_color, font=('Digital-7 Mono', 12))
 bothrxtxTEXT.grid(column=2, row=0, rowspan=2, ipady=10, sticky='EW')
@@ -892,15 +925,29 @@ rightalertFrame.rowconfigure(2, weight=1, uniform='alerts')
 
 def openmenuFUNC():
     menu_frame.grid(column=0, row=0, rowspan=2, sticky='NESW')
+    menu_frame.rowconfigure(0, weight=0) #Row0 RR Text
+    menu_frame.rowconfigure(1, weight=1) #Row1 RR Window
+    menu_frame.rowconfigure(2, weight=0) #Row2 SDR Text
+    menu_frame.rowconfigure(3, weight=1) #Row3 SDR Window
+    menu_frame.rowconfigure(4, weight=0) #Row4 Scanning Text
+    menu_frame.rowconfigure(5, weight=1)  # Row4 Scanning Window
+    menu_frame.columnconfigure(0, weight=1)
+    menu_frame.columnconfigure(1, weight=2)
 
 
 def closemenuFUNC():
     menu_frame.grid_remove()
 
+def togglemenuFUNC():
+    if menu_frame.winfo_ismapped():
+        closemenuFUNC()
+    else:
+        openmenuFUNC()
+
 
 ##MENU BUTTON;column4 while systemstatusframe of displayframe is a columnspan of 4 keeping it outside the primary frame
-menuBTN = Button(rightalertFrame, text=" ≡ ", bg='lightgray', activebackground='gray', font=('Digital-7 Mono', 12),
-                 command=openmenuFUNC)
+menuBTN = Button(bottomFrame, text=" ≡ ", bg='lightgray', activebackground='gray', font=('Digital-7 Mono', 30),
+                 command=togglemenuFUNC)
 menuBTN.grid(row=0, column=5, sticky='NE')
 ##MENU BUTTON
 
@@ -1013,9 +1060,9 @@ def nearestSite(gpsLocation, siteLocations):
         dist = distance(lat1=gpsLocation['lat'], lon1=gpsLocation['lon'], lat2=closest(siteList, gpsLocation)['lat'], lon2=closest(siteList, gpsLocation)['lon'])
 
 
-        sitesDict = closestSite[0]
-        sitesDict['bearing'] = bear
-        sitesDict['distance'] = round(dist, 2)
+        sitesDict = closestSite[0] #Dict of just the closest side
+        sitesDict['bearing'] = bear #Append bearing
+        sitesDict['distance'] = round(dist, 2) #Append distance
         return sitesDict
 
 def compassRotate(bearing):
@@ -1057,20 +1104,11 @@ def compassRotate(bearing):
 
 def gpsRunner():
     #time.sleep(10)
-    config.read('config.ini')
-
     print('Starting gspRunner')
 
-    try:
-        comport = gpsportVar.get()
-        gps = BU343S4Driver(comport)
-    except:
-        comport = config.get('GPS', 'comport')
-        gps = BU343S4Driver(comport)
+    gps = BU343S4Driver("COM5")
+    siteTSV = 'systems/348/sitelocations.tsv'
 
-    #siteTSV = 'systems/348/sitelocations.tsv'
-    siteTSV = 'sitelocations.tsv'
-    currentsite = ''
     while True:
         try:
             gps.update_position()
@@ -1081,7 +1119,7 @@ def gpsRunner():
                 raise EXCEPTION
 
             gpsLocation = dddmm2ddmm(gpsLat, gpsLon)
-            #print(gpsLocation)
+            print(gpsLocation)
 
             #gpsLocation = {'lat': 41.803210, 'lon': -80.946810}
             bearing = nearestSite(gpsLocation, siteTSV)['bearing']
@@ -1095,39 +1133,19 @@ def gpsRunner():
 
             #compassRangeTEXT.configure(text=nearestSite(gpsLocation, siteTSV)['range'])
             compassIMG.configure(image=tkimage)
-            #compassRangeTEXT.configure(text=nearestSite(gpsLocation, siteTSV)['descr'])
-            closestsiteTEXT.configure(text='RFSS: ' + str(rfss) + ' Site: ' + str(site))  ####################################################
-            ##need to save current site to DB and reload it
-            if 'NO FIX' in closestsiteTEXT.cget('text'):
-                pass
-            else:
-                if closestsiteTEXT.cget('text') not in currentsite:
-                    currentsite = closestsiteTEXT.cget('text')
-                    #sysmsgUPDATE(text=closestsiteTEXT.cget('text'), color='green')
-
-                    rfss = re.findall('(?:^.*RFSS: )(\d{1,3})', currentsite)
-                    site = re.findall('(?:.*Site: )(\d{1,3})', currentsite)
-
-                    gpsSiteConfig = 'GPS:R' + str(rfss[0]) + ':S' + str(site[0])
-                    confwriter('SDR_Defaults', 'site', gpsSiteConfig)
-                    gpssiteVar.set(gpsSiteConfig)
-                    currentsite = closestsiteTEXT.cget('text')
-                    print(currentsite)
-                    write_file()
-                    #sysmsgUPDATE(text=currentsite, color='green')
-                    restartop25FUNC()
-
-
-        except BaseException as e:
-            print(e)
+            compassRangeTEXT.configure(text=nearestSite(gpsLocation, siteTSV)['descr'])
+            closestsiteTEXT.configure(text=str(rfss) + ' ' + str(site))####################################################
+        except:
             pass
 
 ######END GPS FUNCTIONS
+#gpsThread = threading.Thread(target=gpsRunner).start()
 
+compassRangeTEXT = Label(leftcompassFrame, text='xx Miles', bg=display_color, font=("Courier", 20))
+compassRangeTEXT.grid(row=0, column=1, sticky='NESW')
 
-closestsiteTEXT = Label(leftcompassFrame, text='NO FIX', bg=display_color, fg='red')
-closestsiteTEXT.grid(row=0, column=1, sticky='NESW')
-
+closestsiteTEXT = Label(leftcompassFrame, text='Finding Site', bg=display_color, font=("Courier", 20))
+closestsiteTEXT.grid(row=2, column=1, sticky='NESW')
 
 ##Right Site Compass Frame
 
@@ -1151,18 +1169,20 @@ tuneBTN = Button(leftcompassFrame, text='TUNE', width=10, bg='lightgray')
 
 # Tab Name Labels
 # tab1Label = Label(callTAB1, text="This is Tab 1", bg=display_color)
-call_logTEXT = Text(callTAB1, bg='gray', relief=SOLID)
+call_logTEXT = Text(callTAB1, bg='gray', relief=SOLID, font=("Arial", 30))
 call_logTEXT.grid(column=0, row=0, padx=2, pady=2, sticky='NESW')
 
 callTAB1.rowconfigure(0, weight=1)
 callTAB1.columnconfigure(0, weight=1)
 
-syslogsyslogTAB2Label = Label(syslogTAB2, text="This is Tab 2", bg='lightgray')
+#syslogsyslogTAB2Label = Label(syslogTAB2, text="This is Tab 2", bg='lightgray')
 
-syslogsyslogTAB2Label.grid(column=1, row=0, padx=10, pady=10, sticky='NESW')
+#syslogsyslogTAB2Label.grid(column=1, row=0, padx=10, pady=10, sticky='NESW')
 
-sys_logTEXT = Text(syslogTAB2, bg='gray', relief=SOLID)
+sys_logTEXT = Text(syslogTAB2, bg='gray', relief=SOLID, font=("Arial", 30))
 sys_logTEXT.grid(column=0, row=0, padx=2, pady=2, sticky='NESW')
+
+syslogTAB2.columnconfigure(0, weight=1)
 
 
 
@@ -1705,7 +1725,15 @@ def loadscangridFUNC(selection):
 scanlistVar = StringVar()
 scanlistVar.set('Select a ScanGrid TSV File to Load')
 
+from tkinter import font as tkFont
+helv = tkFont.Font(family='Helvetica', size=55)
+
 gridtabDRPDWN = OptionMenu(scanGridTAB4, scanlistVar, *scangridfiles, command=loadscangridFUNC)
+
+#gridtabDRPDWN.config(font=helv)
+menu = main_window.nametowidget(gridtabDRPDWN.menuname)
+menu.config(font=helv)
+
 gridtabDRPDWN.grid(column=0, row=0, columnspan=4, sticky='NESW')
 
 ##Row 1 Start
@@ -1862,31 +1890,32 @@ def setscangridFUNC(selection):  #############################YOU NEED TO LOCKOU
 
 
 ##MENU FRAME
-closemenuBTN = Button(menu_frame, text=" ≡ ", bg='lightgray', activebackground='gray', font=('Digital-7 Mono', 12),
-                      command=closemenuFUNC)
-closemenuBTN.grid(row=0, column=2, sticky='E')
 
-menu_frame.columnconfigure(0, weight=1)
-menu_frame.columnconfigure(1, weight=1)
-menu_frame.columnconfigure(2, weight=0)
+#Font sizes
+menu_font_headers = 25
+menu_font_innerframe = 15
+#
 
-rrloginTEXT = Label(menu_frame, text='Radio Reference')
+
+rrloginTEXT = Label(menu_frame, text='Radio Reference', font=("Arial", menu_font_headers))
 rrloginTEXT.grid(column=0, row=0, padx=15, pady=0, sticky='NW')
 
 rrloginFrame = Frame(menu_frame, bd=3, relief=GROOVE)
-rrloginFrame.grid(column=0, row=1, padx=50, sticky='NW')
+rrloginFrame.grid(column=0, row=1, padx=50, sticky='NEW')
 
-usernameTEXT = Label(rrloginFrame, text='Username: ')
+usernameTEXT = Label(rrloginFrame, text='Username: ', font=("Arial", menu_font_innerframe))
 usernameTEXT.grid(column=1, row=1, pady=5, padx=5)
 
-usernameENT = Entry(rrloginFrame, text='')
+usernameENT = Entry(rrloginFrame, text='', font=("Arial", menu_font_innerframe))
 usernameENT.grid(column=2, row=1, columnspan=5, sticky='EW', pady=5, padx=5)
 
-passwordTEXT = Label(rrloginFrame, text='Password: ')
+passwordTEXT = Label(rrloginFrame, text='Password: ', font=("Arial", menu_font_innerframe))
 passwordTEXT.grid(column=1, row=2)
 
-passwordENT = Entry(rrloginFrame, text='', show='*')
+passwordENT = Entry(rrloginFrame, text='', show='*', font=("Arial", menu_font_innerframe))
 passwordENT.grid(column=2, row=2, columnspan=4, sticky='EW', pady=5, padx=5)
+
+rrloginFrame.columnconfigure(2, weight=1)
 
 if 'RadioReference' in config.sections():
     usernameENT.insert(0, config.get('RadioReference', 'rruser'))
@@ -1906,13 +1935,14 @@ def clearrrFUNC():
     passwordENT.delete(0, END)
 
 
-clearrrBTN = Button(rrloginFrame, text='Clear', command=clearrrFUNC)
+clearrrBTN = Button(rrloginFrame, text='Clear', command=clearrrFUNC, font=("Arial", menu_font_innerframe))
 clearrrBTN.grid(column=4, row=3)
 
-enterrrBTN = Button(rrloginFrame, text='Save', command=submitrr)
+enterrrBTN = Button(rrloginFrame, text='Save', command=submitrr, font=("Arial", menu_font_innerframe))
 enterrrBTN.grid(column=5, row=3, pady=5, padx=5)
 
-defaultSDRTEXT = Label(menu_frame, text='Default SDR Settings')
+
+defaultSDRTEXT = Label(menu_frame, text='Default SDR Settings', font=("Arial", menu_font_headers))
 defaultSDRTEXT.grid(column=0, row=2, padx=15, pady=0, sticky='NW')
 
 defaultSDRFrame = Frame(menu_frame, bd=3, relief=GROOVE)
@@ -1923,11 +1953,10 @@ menu_frame.columnconfigure(0, weight=1)
 rrimportFrame = Frame(menu_frame, bd=3, relief=GROOVE)
 rrimportFrame.grid(column=1, row=1, sticky='NSEW', padx=25)
 
-Pi25SettingsTEXT = Label(menu_frame, text='Pi25 Mobile Control Head Settings')
+Pi25SettingsTEXT = Label(menu_frame, text='Pi25 Mobile Control Head Settings', font=("Arial", menu_font_headers))
 Pi25SettingsTEXT.grid(column=1, row=2, padx=0, pady=0, sticky='NW')
 
 pi25settingsthemeOverlay = Frame(menu_frame, bd=3, relief=GROOVE)
-pi25settingsGPSOverlay = Frame(menu_frame, bd=3, relief=GROOVE)
 
 pi25settingsFrame = Frame(menu_frame, bd=3, relief=GROOVE)
 pi25settingsFrame.grid(column=1, row=3, rowspan=3, columns=4, rows=3,  padx=25, sticky='NESW')
@@ -1965,101 +1994,6 @@ pi25settingsthemeOverlay.columnconfigure(2, weight=1, uniform='pi25themeoverlay'
 
 
 
-gpsportTEXT = Label(pi25settingsGPSOverlay, text='Select GPS: ')
-gpsportTEXT.grid(column=0, row=0)
-
-if not config.has_option('GPS', 'enabled'):
-    confwriter('GPS', 'enabled', 'False')
-    confwriter('GPS', 'comport', 'Select a Comport')
-    write_file()
-
-def gpsFUNC():
-    config.read('config.ini')
-
-    if 'raised' in enablegpsBTN.cget('relief'):
-        confwriter('GPS', 'enabled', 'True')
-        confwriter('GPS', 'comport', gpsportVar.get())
-        confwriter('GPS', 'system', gpssystemVar.get())
-
-        write_file()
-        enablegpsBTN.configure(text='GPS\rENABLED', relief=SUNKEN)
-        threading.Thread(target=gpsRunner).start()
-        sysmsgUPDATE(text='Enabling GPS on Comport: ' + gpsportVar.get(), bg='green')
-
-    else:
-        confwriter('GPS', 'enabled', 'False')
-        write_file()
-        enablegpsBTN.configure(text='GPS\rDISABLED', relief=RAISED)
-        sysmsgUPDATE(text='Disabling GPS', bg='green')
-
-
-
-systems = []
-for (dirpath, dirnames, filenames) in walk('systems/'):
-    systems.extend(dirnames)
-    break
-
-
-
-try:
-    config.read('config.ini')
-    confgpssystem = config.get('GPS', 'system')
-except:
-    config.read('config.ini')
-    confwriter('GPS', 'system', 'Select a System')
-    write_file()
-    confgpssystem = 'Select a System'
-
-gpssystemVar = StringVar(defaultSDRFrame)
-gpssystemVar.set(confgpssystem)  # default value
-
-gpssystemOptions = OptionMenu(pi25settingsGPSOverlay, gpssystemVar, *systems)
-gpssystemOptions.grid(column=2, row=0, sticky='NESW')
-
-
-
-
-enablegpsBTN = Button(pi25settingsGPSOverlay, text='', command=lambda: [gpsFUNC(), pi25settingsGPSOverlay.grid_remove(), pi25settingsFrame.grid(column=1, row=3, rowspan=3, columns=4, rows=3,  padx=25, sticky='NESW')])
-enablegpsBTN.grid(column=4, row=0)
-
-
-
-config.read('config.ini')
-gpsStatus = config.get('GPS', 'enabled')
-if 'False' in gpsStatus:
-    enablegpsBTN.configure(text='ENABLE\rGPS', relief=RAISED)
-if 'True' in gpsStatus:
-    enablegpsBTN.configure(text='DISABLE\rGPS', relief=SUNKEN)
-    threading.Thread(target=gpsRunner).start()
-
-
-
-############WHY DOESNT THIS WORK, SHOULD IT NOT RELOAD THE PORT LISTS ON EACH OPTION SELECTION...???>?
-
-def updateGPSPorts(d):
-    print(d)
-    ports = serial.tools.list_ports.comports()
-    portList = [port.name for port in ports]
-
-    gpsportOptions = OptionMenu(pi25settingsGPSOverlay, gpsportVar, *portList)
-    gpsportOptions.grid(column=1, row=0, sticky='NESW')
-
-
-ports = serial.tools.list_ports.comports()
-portList = [port.name for port in ports]
-
-if config.get('GPS', 'comport'):
-    confgpsPort = config.get('GPS', 'comport')
-else:
-    confgpsPort = 'Select a Port'
-
-gpsportVar = StringVar(defaultSDRFrame)
-gpsportVar.set(confgpsPort)  # default value
-
-gpsportOptions = OptionMenu(pi25settingsGPSOverlay, gpsportVar, *portList, command=updateGPSPorts)
-gpsportOptions.grid(column=1, row=0, sticky='NESW')
-
-
 #        confwriter(sectionname, 'callLogging', 'False')
 ###Column 0 and Rows 0-2
 
@@ -2078,47 +2012,47 @@ def menugridBTN1FUNC():
         #write_file()
 
 
-menugridBTN1 = Button(pi25settingsFrame, text='Save Call Log\rTo File', command=menugridBTN1FUNC)
+menugridBTN1 = Button(pi25settingsFrame, text='Save Call Log\rTo File', command=menugridBTN1FUNC, font=("Arial", menu_font_innerframe))
 menugridBTN1.grid(column=0, row=0, sticky='NESW')
 
-menugridBTN2 = Button(pi25settingsFrame, text='Update OP25\rURI', command=lambda: nouriPrompt.grid(row=1, column=0))
+menugridBTN2 = Button(pi25settingsFrame, text='Update OP25\rURI', command=lambda: nouriPrompt.grid(row=0, column=0), font=("Arial", menu_font_innerframe))
 menugridBTN2.grid(column=0, row=1, sticky='NESW')
 
-menugridBTN3 = Button(pi25settingsFrame, text='Select\rTheme', command=lambda: [pi25settingsthemeOverlay.grid(column=1, row=3, rowspan=3, columns=4, rows=3,  padx=25, sticky='NESW'), pi25settingsFrame.grid_forget()])
+menugridBTN3 = Button(pi25settingsFrame, text='Select\rTheme', command=lambda: [pi25settingsthemeOverlay.grid(column=1, row=3, rowspan=3, columns=4, rows=3,  padx=25, sticky='NESW'), pi25settingsFrame.grid_forget()], font=("Arial", menu_font_innerframe))
 menugridBTN3.grid(column=0, row=2, sticky='NESW')
 
 ###Column 1 and Rows 0-3
 
-menugridBTN4 = Button(pi25settingsFrame, text='GPS\rSettings', command=lambda: [pi25settingsGPSOverlay.grid(column=1, row=3, rowspan=3, columns=4, rows=3,  padx=25, sticky='NESW'), pi25settingsFrame.grid_forget()])
+menugridBTN4 = Button(pi25settingsFrame, text='Unpopulated\rButton', font=("Arial", menu_font_innerframe))
 menugridBTN4.grid(column=1, row=0, sticky='NESW')
 
-menugridBTN5 = Button(pi25settingsFrame, text='Unpopulated\rButton')
+menugridBTN5 = Button(pi25settingsFrame, text='Unpopulated\rButton', font=("Arial", menu_font_innerframe))
 menugridBTN5.grid(column=1, row=1, sticky='NESW')
 
-menugridBTN6 = Button(pi25settingsFrame, text='Unpopulated\rButton')
+menugridBTN6 = Button(pi25settingsFrame, text='Unpopulated\rButton', font=("Arial", menu_font_innerframe))
 menugridBTN6.grid(column=1, row=2, sticky='NESW')
 
 ###Column 2 and Rows 0-3
 
 
-menugridBTN7 = Button(pi25settingsFrame, text='Unpopulated\rButton')
+menugridBTN7 = Button(pi25settingsFrame, text='Unpopulated\rButton', font=("Arial", menu_font_innerframe))
 menugridBTN7.grid(column=2, row=0, sticky='NESW')
 
-menugridBTN8 = Button(pi25settingsFrame, text='Unpopulated\rButton')
+menugridBTN8 = Button(pi25settingsFrame, text='Unpopulated\rButton', font=("Arial", menu_font_innerframe))
 menugridBTN8.grid(column=2, row=1, sticky='NESW')
 
-menugridBTN9 = Button(pi25settingsFrame, text='Unpopulated\rButton')
+menugridBTN9 = Button(pi25settingsFrame, text='Unpopulated\rButton', font=("Arial", menu_font_innerframe))
 menugridBTN9.grid(column=2, row=2, sticky='NESW')
 
 ###Column 3 and Rows 0-3
 
-menugridBTN10 = Button(pi25settingsFrame, text='Unpopulated\rButton')
+menugridBTN10 = Button(pi25settingsFrame, text='Unpopulated\rButton', font=("Arial", menu_font_innerframe))
 menugridBTN10.grid(column=3, row=0, sticky='NESW')
 
-menugridBTN11 = Button(pi25settingsFrame, text='Unpopulated\rButton')
+menugridBTN11 = Button(pi25settingsFrame, text='Unpopulated\rButton', font=("Arial", menu_font_innerframe))
 menugridBTN11.grid(column=3, row=1, sticky='NESW')
 
-menugridBTN12 = Button(pi25settingsFrame, text='Unpopulated\rButton')
+menugridBTN12 = Button(pi25settingsFrame, text='Unpopulated\rButton', font=("Arial", menu_font_innerframe))
 menugridBTN12.grid(column=3, row=2, sticky='NESW')
 
 pi25settingsFrame.rowconfigure(0, weight=1, uniform='pi25settingsgrid')
@@ -2175,6 +2109,7 @@ def rrpopulateSystems(selection):
                 count = count + 1
 
     rrselectsystemDRPDWN = OptionMenu(rrimportFrame, rrimportselectsystemVar, *result)
+    rrselectsystemDRPDWN.config(font=("Arial", 25))
     rrselectsystemDRPDWN.grid(column=1, row=0, columnspan=5, sticky='EW', pady=5, padx=5)
     rrimportselectsystemVar.set(result[0])
 
@@ -2195,12 +2130,14 @@ rrstateentryVar = StringVar(rrimportFrame)
 rrstateentryVar.set('Select a State')
 
 rrstateDRPDWN = OptionMenu(rrimportFrame, rrstateentryVar, *stateList, command=rrpopulateSystems)
+rrstateDRPDWN.config(font=("Arial", 25))
 rrstateDRPDWN.grid(column=0, row=0, pady=5, padx=5, sticky='W')
 
 # rrselectsystemTEXT = Label(rrimportFrame, text='System: ')
 # rrselectsystemTEXT.grid(column=1, row=1, pady=5, padx=5)
 
 rrselectsystemDRPDWN = OptionMenu(rrimportFrame, rrimportselectsystemVar, [])
+rrselectsystemDRPDWN.config(font=("Arial", 25))
 rrselectsystemDRPDWN.grid(column=1, row=0, columnspan=5, sticky='NSEW', pady=5, padx=5)
 
 #rrSectionErrorTEXT = Label(rrimportFrame, text='Failed! Check Account')
@@ -2299,7 +2236,7 @@ def rrimportFUNC():
                 sysmsgUPDATE('Importing System Data from Radio Reference for: ' + sysname, bg='green')
                 #rrSectionErrorTEXT.configure(text='Allow Upto 60sec For Server to Import').grid(column=2, row=2, sticky='EW', pady=5, padx=5)
 
-                sendCMD('radioreference', rrUser=rrUser, rrPass=rrPass, sysID=sysid,op25dir="/home/op25/op25/op25/gr-op25_repeater/apps/")
+                sendCMD('radioreference', rrUser=rrUser, rrPass=rrPass, sysID=sysid,op25dir="/home/signalseverywhere/op25/op25/gr-op25_repeater/apps/")
                 generateTSV(rrUser, rrPass, sysid)
 
                 #rrSectionErrorTEXT.grid_forget()
@@ -2310,7 +2247,7 @@ def rrimportFUNC():
 
 
 
-rrimportsystemBTN = Button(rrimportFrame, text='Import System', command=rrimportFUNC)
+rrimportsystemBTN = Button(rrimportFrame, text='Import System', command=rrimportFUNC, font=("Arial", menu_font_innerframe))
 rrimportsystemBTN.grid(column=3, row=2, sticky='EW', pady=5, padx=5)
 
 rrimportFrame.columnconfigure(0, weight=0)
@@ -2335,11 +2272,6 @@ def samplerateFUNC(selection):
     write_file()
 
 
-def siteFUNC(selection):
-    config.set(sdrSection, 'site', selection)
-    write_file()
-
-
 def restartop25FUNC():
     config.read('config.ini')
     sdr = config.get(sdrSection, 'sdr')
@@ -2348,26 +2280,18 @@ def restartop25FUNC():
     sendCMD(function='stopop25')
     time.sleep(2)
     updateStatusText()
-    config.read('config.ini')
-    system = config.get('GPS', 'system')
-    rfsssite = config.get('SDR_Defaults', 'site')
-    rfss = re.findall('(?:^.*:R)(\d{1,3})', rfsssite)
-    site = re.findall('(?:^.*:S)(\d{1,3})', rfsssite)
+    sendCMD(function='startop25', sdr=sdr, lna=lna, samplerate=samplerate, trunkfile='trunk.tsv',
+            op25dir='/home/signalseverywhere/op25/op25/gr-op25_repeater/apps/')
 
 
-
-    trunkfile = 'systems/' + system + '/sites/' + 'rfss' + str(rfss[0]) + 'site' + str(site[0]) + '.tsv'
-    sendCMD(function='startop25', sdr=sdr, lna=lna, samplerate=samplerate, trunkfile=trunkfile,
-            op25dir='/home/op25/op25/op25/gr-op25_repeater/apps/')
-
-
-sdrTEXT = Label(defaultSDRFrame, text='SDR: ')
+sdrTEXT = Label(defaultSDRFrame, text='SDR: ', font=("Arial", menu_font_innerframe))
 sdrTEXT.grid(column=0, row=0, sticky='NEWS')
 
 sdrVar = StringVar(defaultSDRFrame)
 sdrVar.set("RTL")  # default value
 
 sdrOptions = OptionMenu(defaultSDRFrame, sdrVar, "rtl", "rtl_tcp", "airspy", "hackrf", command=sdrFUNC)
+sdrOptions.config(font=("Arial", 25))
 sdrOptions.grid(column=1, row=0, sticky='NESW')
 
 # defaultSDRFrame.columnconfigure(0, weight=1, uniform='sdrMenu')
@@ -2376,7 +2300,7 @@ defaultSDRFrame.columnconfigure(1, weight=1, uniform='sdrMenu')
 # defaultSDRFrame.columnconfigure(3, weight=1, uniform='sdrMenu')
 
 
-lnaTEXT = Label(defaultSDRFrame, text='GAIN: ')
+lnaTEXT = Label(defaultSDRFrame, text='GAIN: ', font=("Arial", menu_font_innerframe))
 lnaTEXT.grid(column=0, row=1, sticky='NEWS')
 
 lnaVar = StringVar(defaultSDRFrame)
@@ -2384,9 +2308,10 @@ lnaVar.set("35")  # default value
 
 lnaOptions = OptionMenu(defaultSDRFrame, lnaVar, '0', '10', '15', '20', '25', '30', '35', '40', '45', '49',
                         command=lnaFUNC)
+lnaOptions.config(font=("Arial", 25))
 lnaOptions.grid(column=1, row=1, sticky='NESW')
 
-samplerateTEXT = Label(defaultSDRFrame, text='SR:   ')
+samplerateTEXT = Label(defaultSDRFrame, text='SR:   ', font=("Arial", menu_font_innerframe))
 samplerateTEXT.grid(column=0, row=2, sticky='NEWS')
 
 samplerateVar = StringVar(defaultSDRFrame)
@@ -2394,59 +2319,11 @@ samplerateVar.set("1.4e6")  # default value
 
 samplerateOptions = OptionMenu(defaultSDRFrame, samplerateVar, '1.2e6', '1.4e6', '2.0e6', '2.8e6', '3.2e6',
                                command=samplerateFUNC)
+samplerateOptions.config(font=("Arial", 25))
 samplerateOptions.grid(column=1, row=2, sticky='NESW')
 
-###CREATE LIST OF SITES
-with open('systems/348/sitelocations.tsv') as database:
-    rows = database.read().split('\n')
-    siteList = []
-    count = 1
-    for i in rows:
-        try:
-            # print(count)
-            columns = rows[count].split('\t')
-            rfss = columns[0]
-            site = columns[1]
-            lat = columns[2]
-            lon = columns[3]
-            range = columns[4]
-            descr = columns[5]
-
-            siteList.append(
-                {'rfss': int(rfss), 'site': int(site), 'lat': float(lat), 'lon': float(lon), 'range': float(range),
-                 'descr': descr})
-
-            # print(siteList)
-            count = count + 1
-        except:
-            count = count + 1
-
-
-count = 0
-result = []
-for i in siteList:
-    rfss = siteList[count]['rfss']
-    site = siteList[count]['site']
-    lat = siteList[count]['lat']
-    lon = siteList[count]['lon']
-    range = siteList[count]['range']
-    descr = siteList[count]['descr']
-
-    line = str(descr) + ':R' + str(rfss) + ':S' + str(site)
-
-    result.insert(count, line)
-
-    count = count + 1
-
-gpssiteVar = StringVar(defaultSDRFrame)
-gpssiteVar.set('Select a Site')  # default value
-
-try:
-    gpssiteOptions = OptionMenu(defaultSDRFrame, gpssiteVar, *result, command=siteFUNC)
-    gpssiteOptions.grid(column=1, row=3, sticky='NESW')
-except:
-    pass
-
+restartop25BTN = Button(defaultSDRFrame, text='Restart OP25', command=restartop25FUNC, font=("Arial", menu_font_innerframe))
+restartop25BTN.grid(column=1, row=3, pady=5, padx=5, sticky='E')
 
 config.read('config.ini')
 sdrSection = 'SDR_Defaults'
@@ -2455,27 +2332,27 @@ if sdrSection not in config.sections():
     confwriter(sdrSection, 'sdr', sdrVar.get())
     confwriter(sdrSection, 'lna', lnaVar.get())
     confwriter(sdrSection, 'samplerate', samplerateVar.get())
-    confwriter(sdrSection, 'site', gpssiteVar.get())
 config.read('config.ini')
 sdrVar.set(config.get(sdrSection, 'sdr'))
 lnaVar.set(config.get(sdrSection, 'lna'))
-gpssiteVar.set(config.get(sdrSection, 'site'))
 samplerateVar.set(config.get(sdrSection, 'samplerate'))
 
+scanmodeTEXT = Label(menu_frame, text='Default Scanning Mode', font=("Arial", menu_font_headers))
+scanmodeTEXT.grid(column=0, row=4, padx=15, pady=0, sticky='NW')
 
-siteTEXT = Label(defaultSDRFrame, text='SITE:   ')
-siteTEXT.grid(column=0, row=3, sticky='NEWS')
+scanmodeFrame = Frame(menu_frame, bd=3, relief=GROOVE)
+scanmodeFrame.grid(column=0, row=5, padx=50, sticky='NESW')
+
 menu_frame.columnconfigure(0, weight=0)
 
-scanmodebtnFrame = Frame(defaultSDRFrame)
-scanmodebtnFrame.grid(column=1, row=4, sticky='NESW')
+scanmodebtnTEXT = Label(scanmodeFrame, text='Select Your Scan Mode: ', font=("Arial", menu_font_innerframe))
+scanmodebtnTEXT.grid(column=0, row=0)
 
+scanmodebtnFrame = Frame(scanmodeFrame)
+scanmodebtnFrame.grid(column=1, row=0, sticky='NESW')
 
-
-
-restartop25BTN = Button(scanmodebtnFrame, text='Restart OP25', command=restartop25FUNC)
-restartop25BTN.grid(column=2, row=0, pady=5, padx=5, sticky='E')
-
+scanmodeFrame.columnconfigure(0, weight=1)
+scanmodeFrame.columnconfigure(1, weight=1)
 
 def scanmodeConf(mode):
     config.read('config.ini')
@@ -2493,21 +2370,21 @@ scanmodeScanlistTEXT = Button(scanmodebtnFrame, text='List Scan',
                                                sendCMD('enableblacklistrange'), restartop25FUNC(),
                                                logTAB.add(scanGridTAB4, text='ScanGrid', sticky='NESW'),
                                                scanmodeConf('list'),
-                                               scanmodeButtonFUNC()])
+                                               scanmodeButtonFUNC()], font=("Arial", menu_font_innerframe))
 scanmodeScanlistTEXT.grid(column=0, row=0, pady=3)
 
 scanmodeSiteTEXT = Button(scanmodebtnFrame, text='Site Scan', command=lambda: [sendCMD('disableblacklistrange'),
                                                                                sysmsgUPDATE(
                                                                                    text='Enabling Site Scan Mode',
                                                                                    bg='green'), restartop25FUNC(),
-                                                                               logTAB.hide(scanGridTAB4),scanmodeConf('site'),scanmodeButtonFUNC()])  # , logTAB.hide(scanGridTAB4)
+                                                                               logTAB.hide(scanGridTAB4),scanmodeConf('site'),scanmodeButtonFUNC()], font=("Arial", menu_font_innerframe))  # , logTAB.hide(scanGridTAB4)
 scanmodeSiteTEXT.grid(column=1, row=0)
 
 def scanmodeButtonFUNC():
     config.read('config.ini')
     if config.has_section('ScanMode'):
         currentmode = config.get('ScanMode', 'mode')
-        modeTEXT.configure(text='Mode: ' + currentmode)
+#        modeTEXT.configure(text='Mode: ' + currentmode)
         if currentmode == 'site':
             scanmodeScanlistTEXT.configure(relief=RAISED)
             scanmodeSiteTEXT.configure(relief=SUNKEN)
@@ -2519,6 +2396,8 @@ def scanmodeButtonFUNC():
             pass
 
 scanmodeButtonFUNC()
+
+
 ##END MENU FRAME
 
 
@@ -2538,9 +2417,9 @@ def colorFUNC(color):
     leftalphaFrame.configure(background=color)
     rightalertFrame.configure(background=color)
     leftbuttonFrame.configure(background=color)
-    leftsysFrame.configure(background=color)
+#    leftsysFrame.configure(background=color)
     leftsiteFrame.configure(background=color)
-    # leftcompassFrame.configure(background=color)
+    leftcompassFrame.configure(background=color)
     rightdetailsFrame.configure(background=color)
     rightlogFrame.configure(background=color)
     righttxrxFrame.configure(background=color)
@@ -2555,20 +2434,20 @@ def colorFUNC(color):
     bothaddrTEXT.configure(fg=textcolor, bg=color)
     statusTEXT.configure(fg=textcolor, bg=color)
     encTEXT.configure(fg=textcolor, bg=color)
-    # compassIMG.configure(fg=textcolor, bg=color)
-    # compassRangeTEXT.configure(fg=textcolor, bg=color)
+    compassIMG.configure(fg=textcolor, bg=color)
+    compassRangeTEXT.configure(fg=textcolor, bg=color)
+    closestsiteTEXT.configure(fg=textcolor, bg=color)
     systemTEXT.configure(fg=textcolor, bg=color)
     # call_logTEXT.configure(fg=textcolor, bg=color)
     row3alertTEXT.configure(fg=textcolor, bg=color)
-
-    closestsiteTEXT.configure(bg=color, fg=textcolor)
+    #tsbksTEXT.configure(fg=textcolor, bg=color)
     compassIMG.configure(bg=color)
     alertTEXT.configure(bg=color)
 
-    modeTEXT.configure(bg=color, fg=textcolor)
+#    modeTEXT.configure(bg=color, fg=textcolor)
 
-    sysidTEXT.configure(fg=textcolor, bg=color)
-
+    #sysidTEXT.configure(fg=textcolor, bg=color)
+    sysidtsbksTEXT.configure(fg=textcolor, bg=color)
     #secondaryTEXT.configure(fg=textcolor, bg=color)
 
     ##Buttons
@@ -2658,9 +2537,12 @@ else:
 
 
 def updateStatusText():
-    statusTEXT.configure(text='SDR: ' + config.get(sdrSection, 'sdr') + "  LNA: " + config.get(sdrSection,
-                                                                                               'lna') + "  SR: " + config.get(
-        sdrSection, 'samplerate'))
+    statusTEXT.configure(text='SDR: ' +
+                              config.get(sdrSection, 'sdr') +
+                              "  LNA: " +
+                              config.get(sdrSection,'lna')
+                              + "  SR: " +
+                              config.get(sdrSection, 'samplerate'))
 
 
 print('MODULE LOADED: op25mch_client.py')
@@ -2671,14 +2553,14 @@ if tagTEXT.cget('text') == "Connecting...":
 
 #####TRAILING SLASH IS VERY IMPORTANT
 
-# sendCMD(function='radioreference', sysID='6643', rrUser='kr0siv', rrPass='', op25dir='/home/op25/op25/op25/gr-op25_repeater/apps/')
+# sendCMD(function='radioreference', sysID='6643', rrUser='kr0siv', rrPass='', op25dir='/home/signalseverywhere/op25/op25/gr-op25_repeater/apps/')
 # sendCMD(function='stopop25')
 '''
 try:
     jsoncmd('skip', 0, 0)
 except:
     print('Not Connecting to OP25, Attempting to Start with Remote Script')
-    sendCMD(function='startop25', sdr='rtl', lna='49', samplerate='2000000', trunkfile='trunk.tsv', offset='0', op25dir='/home/op25/op25/op25/gr-op25_repeater/apps/')
+    sendCMD(function='startop25', sdr='rtl', lna='49', samplerate='2000000', trunkfile='trunk.tsv', offset='0', op25dir='/home/signalseverywhere/op25/op25/gr-op25_repeater/apps/')
 
 '''
 
