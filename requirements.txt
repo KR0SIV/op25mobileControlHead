@@ -1,0 +1,14 @@
+requests
+json
+PIL
+Pillow
+pillow
+time
+re
+datetime
+configparser
+os
+playsound
+zeep
+bs4
+math
